@@ -7,6 +7,7 @@
 #include <armadillo>
 #include <gsl/gsl_randist.h>
 
+
 struct OtuTable {
     std::vector<std::string> sample_names;
     std::vector<std::string> otu_ids;
@@ -15,11 +16,14 @@ struct OtuTable {
     int sample_number;
 };
 
-void LoadOtuFile(struct OtuTable * potu_table, std::string filename) {
+
+struct OtuTable LoadOtuFile(std::string filename) {
     // Used to store strings from file prior to assignment
     std::string line;
     std::string ele;
     std::stringstream line_stream;
+    // Other variables
+    struct OtuTable otu_table;
     int otu_number = 0;
     int sample_number = 0;
     // Open file stream
@@ -36,7 +40,7 @@ void LoadOtuFile(struct OtuTable * potu_table, std::string filename) {
             continue;
         }
         // Store samples
-        potu_table->sample_names.push_back(ele);
+        otu_table.sample_names.push_back(ele);
         ++sample_number;
     }
     // Process sample counts, need to get OTU IDS first
@@ -54,7 +58,7 @@ void LoadOtuFile(struct OtuTable * potu_table, std::string filename) {
         while (std::getline(line_stream, ele, '\t')) {
             // Grab the OTU_id
             if (id) {
-                potu_table->otu_ids.push_back(ele);
+                otu_table.otu_ids.push_back(ele);
                 id = false;
                 continue;
             }
@@ -62,21 +66,80 @@ void LoadOtuFile(struct OtuTable * potu_table, std::string filename) {
             otu_counts.push_back(std::stoi(ele));
         }
         // Add current OTU counts to OtuTable struct instance
-        potu_table->otu_observations.push_back(otu_counts);
+        otu_table.otu_observations.push_back(otu_counts);
         ++otu_number;
     // TODO: Check if growing std::vector is sustainable for large tables
     }
-    potu_table->otu_number = otu_number;
-    potu_table->sample_number = sample_number;
+    // Add counts to otu_table struct
+    otu_table.otu_number = otu_number;
+    otu_table.sample_number = sample_number;
+    return otu_table;
 }
+
+
+arma::Mat<double> GetComponentFractions(struct OtuTable * otu_table, arma::Mat<int> * counts) {
+    // Set up rng environment and seed
+    const gsl_rng_type * rng_type;
+    gsl_rng_env_setup();
+    // gsl_rng_default is a global
+    rng_type = gsl_rng_default;
+    gsl_rng * p_rng = gsl_rng_alloc(gsl_rng_mt19937);
+    gsl_rng_set(p_rng, time(NULL));
+
+    // TODO: check if it's more efficient to gather fractions and then init arma::Mat (instead of init elements)
+    // Estimate fractions by drawing from dirichlet distribution
+    arma::Mat<double> fractions(otu_table->sample_number, otu_table->otu_number);
+    for(int i = 0; i < otu_table->sample_number; ++i) {
+        // Get arma row and add pseudo count (then convert to double vector for rng function)
+        arma::Row<int> row_pseudocount = counts->row(i) + 1;
+        std::vector<double> row_pseudocount_vector = arma::conv_to<std::vector<double>>::from(row_pseudocount);
+        std::vector<double> * pr = &row_pseudocount_vector;
+        // Draw from dirichlet dist, storing results in theta double array
+        size_t row_size = row_pseudocount_vector.size();
+        double theta[row_size];
+        // The function takes double arrays and it seems that you must pass the address of the first element to function
+        gsl_ran_dirichlet(p_rng, row_size, &row_pseudocount_vector[0], &theta[0]);
+        // Create arma::Row from double[] and update fractions row
+        arma::Mat<double> estimated_fractions_row(theta, 1, 50);
+        fractions.row(i) = estimated_fractions_row;
+    }
+    // Free rng memory
+    gsl_rng_free(p_rng);
+
+    return fractions;
+}
+
+
+arma::Mat<double> FromFileGetComponentFractions(struct OtuTable * otu_table, std::string filename) {
+    // Defining some variables
+    std::string line;
+    std::string ele;
+    std::stringstream line_stream;
+    std::vector<double> fraction_elements;
+    // Open file stream
+    std::ifstream fractions_file;
+    fractions_file.open(filename);
+    // Load all fraction elements into a vector
+    while (std::getline(fractions_file, line)) {
+        // Add current line to line stream and then split by tabs
+        line_stream.clear();
+        line_stream.str(line);
+        while (std::getline(line_stream, ele, '\t')) {
+            fraction_elements.push_back(std::stod(ele));
+        }
+    }
+    arma::Mat<double> fractions(fraction_elements);
+    fractions.reshape(otu_table->otu_number, otu_table->sample_number);
+    arma::inplace_trans(fractions);
+    return fractions;
+}
+
 
 int main() {
     // Load the OTU file from
     std::string otu_filename;
     otu_filename = "fake_data.txt";
-    struct OtuTable otu_table;
-    // TODO: Check if this is the most appropriate design (init struct and then passing to function)
-    LoadOtuFile(&otu_table, otu_filename);
+    struct OtuTable otu_table = LoadOtuFile(otu_filename);
     // TODO: It appears from the armadillo docs you can initialise an arma:mat from a 1-d vector.
     //       This means that when loading the OTU table, I could record the dimensions and have a
     //       1-d std::vector<int>. For now I'll leave as is given that datastructure may be useful later
@@ -91,53 +154,13 @@ int main() {
             counts_vector.push_back(*ele);
         }
     }
-    // Construct armadillo integer matrix, column major construction
+    // Construct count matrix
     arma::Mat<int> counts(counts_vector);
     counts.reshape(otu_table.sample_number, otu_table.otu_number);
 
     // STEP 1: Estimate component fractions
-    // TODO: Check if fractions matrix is used elsewhere (I don't think it is)
-    double fraction_fill = 1 / (double)otu_table.otu_number;
-    arma::Mat<double> fractions(otu_table.sample_number, otu_table.otu_number);
-    fractions.fill(fraction_fill);
-    // Get arma row and add pseudo count (then convert to double vector for rng function)
-    int i = 0;
-    arma::Row<int> row_pseudocount = counts.row(i) + 1;
-    std::vector<double> row_pseudocount_vector = arma::conv_to<std::vector<double>>::from(row_pseudocount);
-
-    // Set up rng environment and seed
-    const gsl_rng_type * rng_type;
-    gsl_rng_env_setup();
-    // gsl_rng_default is a global
-    rng_type = gsl_rng_default;
-    gsl_rng * p_rng = gsl_rng_alloc(rng_type);
-    gsl_rng_set(p_rng, time(NULL));
-
-    // Draw from dirichlet dist, storing results in theta double array
-    size_t row_size = row_pseudocount_vector.size();
-    double theta[row_size];
-    // The function takes double arrays and it seems that you must pass the address of the first element to function
-    gsl_ran_dirichlet(p_rng, row_size, &row_pseudocount_vector[0], &theta[0]);
-    // Free the rng
-    gsl_rng_free(p_rng);
-
-    // TODO: create list of fraction vectors and init arma Mat as above
-    // Create arma::Row from double[] and update fractions row
-    // Update fractions row
-    arma::Mat<double> estimated_fractions_row(theta, 1, 50);
-    fractions.row(i) = estimated_fractions_row;
-
-    /*double sum = 0;
-    for(int i = 0; i < row_size; ++i){
-        sum += theta[i];
-        std::cout << theta[i] << " " << row_pseudocount_vector[i] << std::endl;
-    }
-    std::cout << sum << std::endl;
-    std::cout << row_size << std::endl;*/
-
-
-    //std::vector<int> row;
-    //row = counts.col(i)
-    //row.for_each() += 1;
-    //fractions.col(i) = dirichlet(row);
+    // TODO: *** TEMP *** Will load in a pre-calculated component fraction matrix so that results/steps can be checked
+    //arma::Mat<double> fractions = GetComponentFractions(&otu_table, &counts);
+    arma::Mat<double> fractions = FromFileGetComponentFractions(&otu_table, "fractions.tsv");
 }
+
