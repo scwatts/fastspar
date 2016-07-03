@@ -73,7 +73,7 @@ struct OtuTable LoadOtuFile(std::string filename) {
 }
 
 
-arma::Mat<double> GetComponentFractions(struct OtuTable * otu_table, arma::Mat<int> * counts) {
+arma::Mat<double> EstimateComponentFractions(struct OtuTable * otu_table, arma::Mat<int> * counts) {
     // Set up rng environment and seed
     const gsl_rng_type * rng_type;
     gsl_rng_env_setup();
@@ -131,8 +131,22 @@ arma::Mat<double> FromFileGetComponentFractions(struct OtuTable * otu_table, std
 }
 
 
+arma::Mat<double> CalculateLogRatioVariance(arma::Mat<double> * fractions) {
+    // TODO: Given this is a square mat, check that we're required to iterate over all as in SparCC (thinking only half)
+    arma::Mat<double> variance(fractions->n_cols, fractions->n_cols);
+    for (int i = 0; i < fractions->n_cols - 1; ++i) {
+        for (int j = i + 1; j < fractions->n_cols; ++j) {
+            arma::Col<double> log_ratio_col = arma::log(fractions->col(i) / fractions->col(j));
+            double col_variance = arma::var(log_ratio_col);
+            variance(i, j) = variance(j, i) = col_variance;
+        }
+    }
+    return variance;
+}
+
+
 int main() {
-    // Load the OTU file from
+    // Load the OTU table from file
     std::string otu_filename;
     otu_filename = "fake_data.txt";
     struct OtuTable otu_table = LoadOtuFile(otu_filename);
@@ -140,9 +154,9 @@ int main() {
     arma::Mat<int> counts(otu_table.otu_observations);
     counts.reshape(otu_table.sample_number, otu_table.otu_number);
 
-    // STEP 1: Estimate component fractions
+    // STEP 1: Estimate component fractions and get log ratio variance
     // TODO: *** TEMP *** Will load in a pre-calculated component fraction matrix so that results/steps can be checked
-    //arma::Mat<double> fractions = GetComponentFractions(&otu_table, &counts);
+    //arma::Mat<double> fractions = EstimateComponentFractions(&otu_table, &counts);
     arma::Mat<double> fractions = FromFileGetComponentFractions(&otu_table, "fractions.tsv");
+    arma::Mat<double> variance = CalculateLogRatioVariance(&fractions);
 }
-
