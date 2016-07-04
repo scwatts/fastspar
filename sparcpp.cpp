@@ -17,6 +17,12 @@ struct OtuTable {
 };
 
 
+struct BasisResults {
+    arma::Mat<double> basis_correlation;
+    arma::Mat<double> basis_covariance;
+};
+
+
 struct OtuTable loadOtuFile(std::string filename) {
     // Used to store strings from file prior to assignment
     std::string line;
@@ -157,6 +163,42 @@ arma::Col<double> calculateComponentVariance(arma::Mat<double>& variance, const 
 }
 
 
+
+struct BasisResults calculateCorAndCov(const arma::Mat<double>& variance, const arma::Col<double>& basis_variance,
+                                       const struct OtuTable& otu_table) {
+    // TODO: Determine if basis_cor_el and basis_cov_el can all be calculated and then have arma::Mat initialised
+    // Initialise matrices and set diagonals
+    struct BasisResults basis_results;
+    std::vector<double> basis_cor_diag(otu_table.otu_number, 1);
+    basis_results.basis_correlation = arma::diagmat((arma::Col<double>) basis_cor_diag);
+    basis_results.basis_covariance = arma::diagmat((arma::Col<double>) basis_variance);
+    // Calculate correlation and covariance for each element add set in basis matrices
+    for (int i = 0; i < otu_table.otu_number - 1; ++i) {
+        for (int j = i + 1; j < otu_table.otu_number; ++j) {
+            // Calculate cor and cov
+            double basis_cov_el = 0.5 * (basis_variance(i) + basis_variance(j) - variance(i, j));
+            double basis_cor_el = basis_cov_el / sqrt(basis_variance(i)) / sqrt(basis_variance(j));
+            // Check if we got a valid correlation
+            if (abs(basis_cor_el) > 1) {
+                if (std::signbit(basis_cor_el) == 0) {
+                    basis_cor_el = -1;
+                }
+                else if (std::signbit(basis_cor_el) == 1) {
+                    basis_cor_el = 1;
+                }
+                // Recalculate correlation after setting cor
+                double basis_cov_el = basis_cor_el * sqrt(basis_variance(i)) * sqrt(basis_variance(j));
+            }
+            // TODO: Check if we can avoid repetition here as well
+            // Set basis_correlation and basis_covariance matrices
+            basis_results.basis_correlation(i, j) = basis_results.basis_correlation(j, i) = basis_cor_el;
+            basis_results.basis_covariance(i, j) = basis_results.basis_covariance(i, j) = basis_cov_el;
+        }
+    }
+    return basis_results;
+}
+
+
 int main() {
     // Load the OTU table from file
     std::string otu_filename;
@@ -174,4 +216,7 @@ int main() {
 
     // STEP 2: Calculate component variation
     arma::Col<double> basis_variance = calculateComponentVariance(variance, otu_table);
+
+    // STEP 3: Calculate correlation and covariance from basis variation and estimated fractions
+    struct BasisResults basis_results = calculateCorAndCov(variance, basis_variance, otu_table);
 }
