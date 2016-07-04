@@ -17,7 +17,7 @@ struct OtuTable {
 };
 
 
-struct OtuTable LoadOtuFile(std::string filename) {
+struct OtuTable loadOtuFile(std::string filename) {
     // Used to store strings from file prior to assignment
     std::string line;
     std::string ele;
@@ -73,7 +73,7 @@ struct OtuTable LoadOtuFile(std::string filename) {
 }
 
 
-arma::Mat<double> EstimateComponentFractions(const struct OtuTable& otu_table, arma::Mat<int>& counts) {
+arma::Mat<double> estimateComponentFractions(const struct OtuTable& otu_table, arma::Mat<int>& counts) {
     // Set up rng environment and seed
     const gsl_rng_type * rng_type;
     gsl_rng_env_setup();
@@ -104,7 +104,7 @@ arma::Mat<double> EstimateComponentFractions(const struct OtuTable& otu_table, a
 }
 
 
-arma::Mat<double> FromFileGetComponentFractions(const struct OtuTable& otu_table, std::string filename) {
+arma::Mat<double> fromFileGetComponentFractions(const struct OtuTable& otu_table, std::string filename) {
     // NOTE: This is a temp function to provide a consistent fraction component estimatation. In final build,
     // the function FileGetComponentFractions will be used.
     // Defining some variables
@@ -131,7 +131,7 @@ arma::Mat<double> FromFileGetComponentFractions(const struct OtuTable& otu_table
 }
 
 
-arma::Mat<double> CalculateLogRatioVariance(const arma::Mat<double>& fractions) {
+arma::Mat<double> calculateLogRatioVariance(const arma::Mat<double>& fractions) {
     // TODO: Given this is a square mat, check that we're required to iterate over all as in SparCC (thinking only half)
     arma::Mat<double> variance(fractions.n_cols, fractions.n_cols);
     for (int i = 0; i < fractions.n_cols - 1; ++i) {
@@ -145,11 +145,23 @@ arma::Mat<double> CalculateLogRatioVariance(const arma::Mat<double>& fractions) 
 }
 
 
+arma::Col<double> calculateComponentVariance(arma::Mat<double>& variance, const struct OtuTable& otu_table) {
+    arma::Col<double> variance_vector = arma::sum(variance, 1);
+    std::vector<double> mod_diag(otu_table.otu_number, otu_table.otu_number - 2);
+    // Using double type as we'll need to get the inverse which fails when using an int mat
+    arma::Mat<double> mod = arma::diagmat((arma::Col<double>) mod_diag);
+    // TODO: Make sure this isn't copying matrix
+    mod = mod + 1;
+    arma::Col<double> basis_variance = mod.i() * variance_vector;
+    return basis_variance;
+}
+
+
 int main() {
     // Load the OTU table from file
     std::string otu_filename;
     otu_filename = "fake_data.txt";
-    struct OtuTable otu_table = LoadOtuFile(otu_filename);
+    struct OtuTable otu_table = loadOtuFile(otu_filename);
     // Construct count matrix
     arma::Mat<int> counts(otu_table.otu_observations);
     counts.reshape(otu_table.sample_number, otu_table.otu_number);
@@ -157,6 +169,9 @@ int main() {
     // STEP 1: Estimate component fractions and get log ratio variance
     // TODO: *** TEMP *** Will load in a pre-calculated component fraction matrix so that results/steps can be checked
     //arma::Mat<double> fractions = EstimateComponentFractions(&otu_table, &counts);
-    arma::Mat<double> fractions = FromFileGetComponentFractions(otu_table, "fractions.tsv");
-    arma::Mat<double> variance = CalculateLogRatioVariance(fractions);
+    arma::Mat<double> fractions = fromFileGetComponentFractions(otu_table, "fractions.tsv");
+    arma::Mat<double> variance = calculateLogRatioVariance(fractions);
+
+    // STEP 2: Calculate component variation
+    arma::Col<double> basis_variance = calculateComponentVariance(variance, otu_table);
 }
