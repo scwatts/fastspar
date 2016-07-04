@@ -145,7 +145,8 @@ arma::Mat<double> fromFileGetComponentFractions(const struct OtuTable& otu_table
 
 arma::Mat<double> calculateLogRatioVariance(const arma::Mat<double>& fractions) {
     // TODO: Given this is a square mat, check that we're required to iterate over all as in SparCC (thinking only half)
-    arma::Mat<double> variance(fractions.n_cols, fractions.n_cols);
+    // TODO: !IMPORTANT we're not assigning all elements in the variance matrix, is this correct?
+    arma::Mat<double> variance(fractions.n_cols, fractions.n_cols, arma::fill::zeros);
     for (int i = 0; i < fractions.n_cols - 1; ++i) {
         for (int j = i + 1; j < fractions.n_cols; ++j) {
             arma::Col<double> log_ratio_col = arma::log(fractions.col(i) / fractions.col(j));
@@ -245,8 +246,9 @@ int main() {
     const int exclude_iterations = 10;
 
     // Define some out-of-loop variables
-    std::vector<arma::Mat<double>> correlations;
-    std::vector<arma::Mat<double>> covariances;
+    //std::vector<arma::Mat<double>> correlations;
+    std::vector<arma::Mat<double>> correlation_vector;
+    std::vector<arma::Mat<double>> covariance_vector;
 
     // Load the OTU table from file
     std::string otu_filename;
@@ -277,7 +279,6 @@ int main() {
         struct BasisResults basis_results = calculateCorAndCov(variance, variance_results.basis_variance, otu_table);
 
         // STEP 4: Exclude highly correlated pairs, repeating correlation/ covariance calculation each iteration
-        std::cout << "Running exclusion: " << i << std::endl;
         for (int j = 0; j < exclude_iterations; ++j) {
             findAndAddExcludedPairs(basis_results, variance_results, otu_table, excluded);
             // NOTE: Make sure the previous iteration correlation basis is used
@@ -296,7 +297,24 @@ int main() {
         }
 
         // Finally add the calculated correlation and covariances to a running vector
-        //correlations.push_back(basis_results.basis_correlation);
-        //covariances.push_back(basis_results.basis_covariance);
+        correlation_vector.push_back(basis_results.basis_correlation);
+        covariance_vector.push_back(basis_results.basis_covariance);
+    }
+    // Get median of all i,j elements across the iterations for correlation
+    // Add correlation matrices to arma Cube so that we can get views of all i, j of each matrix
+    arma::Cube<double> correlation_cube(otu_table.otu_number, otu_table.otu_number, correlation_vector.size());
+    // Fill cube with correlation matrix slices
+    int cube_slice = 0;
+    for (std::vector<arma::Mat<double>>::iterator it = correlation_vector.begin(); it != correlation_vector.end(); ++it) {
+        correlation_cube.slice(cube_slice) = *it;
+        ++cube_slice;
+    }
+    // Get median value for each i, j element across all n iterations
+    arma::Mat<double> median_correlation(otu_table.otu_number, otu_table.otu_number);
+    for (int i = 0; i < otu_table.otu_number; ++i) {
+        for (int j = 0; j < otu_table.otu_number; ++j){
+            arma::Row<double> r = correlation_cube.subcube(arma::span(i), arma::span(j), arma::span());
+            median_correlation(i, j) = arma::median(r);
+        }
     }
 }
