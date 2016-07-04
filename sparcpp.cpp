@@ -17,6 +17,12 @@ struct OtuTable {
 };
 
 
+struct VarianceResults {
+    arma::Col<double> basis_variance;
+    arma::Mat<double> mod;
+};
+
+
 struct BasisResults {
     arma::Mat<double> basis_correlation;
     arma::Mat<double> basis_covariance;
@@ -151,17 +157,24 @@ arma::Mat<double> calculateLogRatioVariance(const arma::Mat<double>& fractions) 
 }
 
 
-arma::Col<double> calculateComponentVariance(arma::Mat<double>& variance, const struct OtuTable& otu_table) {
+struct VarianceResults calculateComponentVariance(arma::Mat<double> variance,
+                                                  arma::Mat<double>& mod,
+                                                  std::vector<arma::uword>& excluded,
+                                                  const struct OtuTable& otu_table) {
+    // NOTE: The variance matrix is passed as value so that we can modify it only in this scope
+    struct VarianceResults variance_results;
+    // If any pairs have been excluded, set variance to zero
+    if (!excluded.empty()) {
+        variance((arma::Col<arma::uword>)excluded).fill(0.0);
+    }
     arma::Col<double> variance_vector = arma::sum(variance, 1);
-    std::vector<double> mod_diag(otu_table.otu_number, otu_table.otu_number - 2);
     // Using double type as we'll need to get the inverse which fails when using an int mat
-    arma::Mat<double> mod = arma::diagmat((arma::Col<double>) mod_diag);
-    // TODO: Make sure this isn't copying matrix
-    mod = mod + 1;
-    arma::Col<double> basis_variance = mod.i() * variance_vector;
-    return basis_variance;
+    variance_results.mod = mod;
+    variance_results.basis_variance = variance_results.mod.i() * variance_vector;
+    // Set variances less than 0 to minimum variance
+    variance_results.basis_variance(arma::find(variance_results.basis_variance < 0)).fill(1e-4);
+    return variance_results;
 }
-
 
 
 struct BasisResults calculateCorAndCov(const arma::Mat<double>& variance, const arma::Col<double>& basis_variance,
@@ -169,6 +182,7 @@ struct BasisResults calculateCorAndCov(const arma::Mat<double>& variance, const 
     // TODO: Determine if basis_cor_el and basis_cov_el can all be calculated and then have arma::Mat initialised
     // Initialise matrices and set diagonals
     struct BasisResults basis_results;
+    // TODO: We only need to set diagonal on final table (we otherwise set diag to zero then check for high correlates)
     std::vector<double> basis_cor_diag(otu_table.otu_number, 1);
     basis_results.basis_correlation = arma::diagmat((arma::Col<double>) basis_cor_diag);
     basis_results.basis_covariance = arma::diagmat((arma::Col<double>) basis_variance);
@@ -199,7 +213,41 @@ struct BasisResults calculateCorAndCov(const arma::Mat<double>& variance, const 
 }
 
 
+void findAndAddExcludedPairs(struct BasisResults basis_results, struct VarianceResults& variance_results,
+                             const struct OtuTable& otu_table, std::vector<arma::uword>& excluded) {
+    // NOTE: BasisResults are passed by value as we need to makes changes only in this function
+    basis_results.basis_correlation.diag().zeros();
+    basis_results.basis_correlation = arma::abs(basis_results.basis_correlation);
+    // Set previously excluded correlations to zero
+    basis_results.basis_correlation((arma::Col<arma::uword>)excluded).fill(0.0);
+    // Get all elements with the max value
+    double max_correlate = basis_results.basis_correlation.max();
+    arma::Col<arma::uword> max_correlate_idx = arma::find(basis_results.basis_correlation == max_correlate);
+    // If max correlation is above a threshold, subtract one from the appropriate mod matrix positions
+    if (max_correlate > 0.1) {
+        // For each max correlate pair
+        for (arma::Col<arma::uword>::iterator it = max_correlate_idx.begin(); it != max_correlate_idx.end(); ++it) {
+            // Substract from mod matrix
+            unsigned int diagonal_idx = *it % otu_table.otu_number;
+            variance_results.mod.diag()[diagonal_idx] -= 1;
+            // TODO: Check if it's quicker to select all elements at once and then subtract one
+            variance_results.mod(*it) -= 1;
+            // Also add excluded indices to running list
+            excluded.push_back(*it);
+        }
+    }
+}
+
+
 int main() {
+    // Set some parameters
+    const int iterations = 20;
+    const int exclude_iterations = 10;
+
+    // Define some out-of-loop variables
+    std::vector<arma::Mat<double>> correlations;
+    std::vector<arma::Mat<double>> covariances;
+
     // Load the OTU table from file
     std::string otu_filename;
     otu_filename = "fake_data.txt";
@@ -208,15 +256,47 @@ int main() {
     arma::Mat<int> counts(otu_table.otu_observations);
     counts.reshape(otu_table.sample_number, otu_table.otu_number);
 
-    // STEP 1: Estimate component fractions and get log ratio variance
-    // TODO: *** TEMP *** Will load in a pre-calculated component fraction matrix so that results/steps can be checked
-    //arma::Mat<double> fractions = EstimateComponentFractions(&otu_table, &counts);
-    arma::Mat<double> fractions = fromFileGetComponentFractions(otu_table, "fractions.tsv");
-    arma::Mat<double> variance = calculateLogRatioVariance(fractions);
+    for (int i = 0; i < iterations; ++i) {
+        std::cout << "Running iteration: " << i << std::endl;
+        // STEP 1: Estimate component fractions and get log ratio variance
+        // TEMP: Will load in a pre-calculated component fraction matrix so that results/steps can be checked
+        //arma::Mat<double> fractions = EstimateComponentFractions(&otu_table, &counts);
+        arma::Mat<double> fractions = fromFileGetComponentFractions(otu_table, "fractions.tsv");
+        arma::Mat<double> variance = calculateLogRatioVariance(fractions);
 
-    // STEP 2: Calculate component variation
-    arma::Col<double> basis_variance = calculateComponentVariance(variance, otu_table);
+        // STEP 2: Calculate component variation
+        std::vector<arma::uword> excluded;
+        // Initialise mod matrix
+        std::vector<double> mod_diag(otu_table.otu_number, otu_table.otu_number - 2);
+        arma::Mat<double> mod = arma::diagmat((arma::Col<double>) mod_diag);
+        mod = mod + 1;
+        // And now calculate
+        struct VarianceResults variance_results = calculateComponentVariance(variance, mod, excluded, otu_table);
 
-    // STEP 3: Calculate correlation and covariance from basis variation and estimated fractions
-    struct BasisResults basis_results = calculateCorAndCov(variance, basis_variance, otu_table);
+        // STEP 3: Calculate correlation and covariance from basis variation and estimated fractions
+        struct BasisResults basis_results = calculateCorAndCov(variance, variance_results.basis_variance, otu_table);
+
+        // STEP 4: Exclude highly correlated pairs, repeating correlation/ covariance calculation each iteration
+        std::cout << "Running exclusion: " << i << std::endl;
+        for (int j = 0; j < exclude_iterations; ++j) {
+            findAndAddExcludedPairs(basis_results, variance_results, otu_table, excluded);
+            // NOTE: Make sure the previous iteration correlation basis is used
+            // Recalculate component variation after pair exclusion
+            variance_results = calculateComponentVariance(variance, variance_results.mod, excluded, otu_table);
+            // Recalculate correlation and covariance after pair exclusion
+            basis_results = calculateCorAndCov(variance, variance_results.basis_variance, otu_table);
+        }
+
+        // SparCC performs Pearson product-moment correlation coefficients (numpy.corrcoef) after apply a center
+        // log ratio if the maximum correlation magnitude is greater than 1
+        // TODO: Implement this (:
+        if (arma::abs(basis_results.basis_correlation).max() > 1.0){
+            std::string error_str = "Input triggered condition to perform clr correlation, this is not yet implemented";
+            std::cerr << error_str << std::endl;
+        }
+
+        // Finally add the calculated correlation and covariances to a running vector
+        //correlations.push_back(basis_results.basis_correlation);
+        //covariances.push_back(basis_results.basis_covariance);
+    }
 }
