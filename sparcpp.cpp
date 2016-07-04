@@ -73,7 +73,7 @@ struct OtuTable LoadOtuFile(std::string filename) {
 }
 
 
-arma::Mat<double> EstimateComponentFractions(struct OtuTable * otu_table, arma::Mat<int> * counts) {
+arma::Mat<double> EstimateComponentFractions(const struct OtuTable& otu_table, arma::Mat<int>& counts) {
     // Set up rng environment and seed
     const gsl_rng_type * rng_type;
     gsl_rng_env_setup();
@@ -83,17 +83,17 @@ arma::Mat<double> EstimateComponentFractions(struct OtuTable * otu_table, arma::
     gsl_rng_set(p_rng, time(NULL));
     // TODO: check if it's more efficient to gather fractions and then init arma::Mat (instead of init elements)
     // Estimate fractions by drawing from dirichlet distribution
-    arma::Mat<double> fractions(otu_table->sample_number, otu_table->otu_number);
-    for(int i = 0; i < otu_table->sample_number; ++i) {
+    arma::Mat<double> fractions(otu_table.sample_number, otu_table.otu_number);
+    for(int i = 0; i < otu_table.sample_number; ++i) {
         // Get arma row and add pseudo count (then convert to double vector for rng function)
-        arma::Row<int> row_pseudocount = counts->row(i) + 1;
+        arma::Row<int> row_pseudocount = counts.row(i) + 1;
         std::vector<double> row_pseudocount_vector = arma::conv_to<std::vector<double>>::from(row_pseudocount);
         std::vector<double> * pr = &row_pseudocount_vector;
         // Draw from dirichlet dist, storing results in theta double array
         size_t row_size = row_pseudocount_vector.size();
         double theta[row_size];
         // The function takes double arrays and it seems that you must pass the address of the first element to function
-        gsl_ran_dirichlet(p_rng, row_size, &row_pseudocount_vector[0], &theta[0]);
+        gsl_ran_dirichlet(p_rng, row_size, &row_pseudocount_vector[0], theta);
         // Create arma::Row from double[] and update fractions row
         arma::Mat<double> estimated_fractions_row(theta, 1, 50);
         fractions.row(i) = estimated_fractions_row;
@@ -104,7 +104,7 @@ arma::Mat<double> EstimateComponentFractions(struct OtuTable * otu_table, arma::
 }
 
 
-arma::Mat<double> FromFileGetComponentFractions(struct OtuTable * otu_table, std::string filename) {
+arma::Mat<double> FromFileGetComponentFractions(const struct OtuTable& otu_table, std::string filename) {
     // NOTE: This is a temp function to provide a consistent fraction component estimatation. In final build,
     // the function FileGetComponentFractions will be used.
     // Defining some variables
@@ -125,18 +125,18 @@ arma::Mat<double> FromFileGetComponentFractions(struct OtuTable * otu_table, std
         }
     }
     arma::Mat<double> fractions(fraction_elements);
-    fractions.reshape(otu_table->otu_number, otu_table->sample_number);
+    fractions.reshape(otu_table.otu_number, otu_table.sample_number);
     arma::inplace_trans(fractions);
     return fractions;
 }
 
 
-arma::Mat<double> CalculateLogRatioVariance(arma::Mat<double> * fractions) {
+arma::Mat<double> CalculateLogRatioVariance(const arma::Mat<double>& fractions) {
     // TODO: Given this is a square mat, check that we're required to iterate over all as in SparCC (thinking only half)
-    arma::Mat<double> variance(fractions->n_cols, fractions->n_cols);
-    for (int i = 0; i < fractions->n_cols - 1; ++i) {
-        for (int j = i + 1; j < fractions->n_cols; ++j) {
-            arma::Col<double> log_ratio_col = arma::log(fractions->col(i) / fractions->col(j));
+    arma::Mat<double> variance(fractions.n_cols, fractions.n_cols);
+    for (int i = 0; i < fractions.n_cols - 1; ++i) {
+        for (int j = i + 1; j < fractions.n_cols; ++j) {
+            arma::Col<double> log_ratio_col = arma::log(fractions.col(i) / fractions.col(j));
             double col_variance = arma::var(log_ratio_col);
             variance(i, j) = variance(j, i) = col_variance;
         }
@@ -157,6 +157,6 @@ int main() {
     // STEP 1: Estimate component fractions and get log ratio variance
     // TODO: *** TEMP *** Will load in a pre-calculated component fraction matrix so that results/steps can be checked
     //arma::Mat<double> fractions = EstimateComponentFractions(&otu_table, &counts);
-    arma::Mat<double> fractions = FromFileGetComponentFractions(&otu_table, "fractions.tsv");
-    arma::Mat<double> variance = CalculateLogRatioVariance(&fractions);
+    arma::Mat<double> fractions = FromFileGetComponentFractions(otu_table, "fractions.tsv");
+    arma::Mat<double> variance = CalculateLogRatioVariance(fractions);
 }
