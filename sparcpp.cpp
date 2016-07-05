@@ -29,6 +29,12 @@ struct BasisResults {
 };
 
 
+struct SparCppResults {
+    arma::Mat<double> median_correlation;
+    arma::Mat<double> median_covariance;
+};
+
+
 struct OtuTable loadOtuFile(std::string filename) {
     // Used to store strings from file prior to assignment
     std::string line;
@@ -100,7 +106,6 @@ arma::Mat<double> estimateComponentFractions(const struct OtuTable& otu_table, a
         // Get arma row and add pseudo count (then convert to double vector for rng function)
         arma::Row<int> row_pseudocount = counts.row(i) + 1;
         std::vector<double> row_pseudocount_vector = arma::conv_to<std::vector<double>>::from(row_pseudocount);
-        std::vector<double> * pr = &row_pseudocount_vector;
         // Draw from dirichlet dist, storing results in theta double array
         size_t row_size = row_pseudocount_vector.size();
         double theta[row_size];
@@ -240,15 +245,61 @@ void findAndAddExcludedPairs(struct BasisResults basis_results, struct VarianceR
 }
 
 
+struct SparCppResults calculateMedianCorAndCov(std::vector<arma::Mat<double>>& correlation_vector,
+                                               std::vector<arma::Col<double>>& covariance_vector,
+                                               const struct OtuTable otu_table, const int iterations) {
+    SparCppResults sparcpp_results;
+    // Get median of all i,j elements across the iterations for correlation
+    // Add correlation matrices to arma Cube so that we can get views of all i, j of each matrix
+    arma::Cube<double> correlation_cube(otu_table.otu_number, otu_table.otu_number, correlation_vector.size());
+    correlation_cube.fill(0.0);
+    // Fill cube with correlation matrix slices
+    int cube_slice = 0;
+    for (std::vector<arma::Mat<double>>::iterator it = correlation_vector.begin();
+         it != correlation_vector.end(); ++it) {
+        correlation_cube.slice(cube_slice) = *it;
+        ++cube_slice;
+    }
+    // Get median value for each i, j element across all n iterations
+    sparcpp_results.median_correlation.reshape(otu_table.otu_number, otu_table.otu_number);
+    for (int i = 0; i < otu_table.otu_number; ++i) {
+        for (int j = 0; j < otu_table.otu_number; ++j) {
+            arma::Row<double> r = correlation_cube.subcube(arma::span(i), arma::span(j), arma::span());
+            sparcpp_results.median_correlation(i, j) = arma::median(r);
+        }
+    }
+    // Get median for diagonal elements across iterations for covariance
+    // Add covariance diagonals to arma Mat so that we can get row views for all i, j elements
+    arma::Mat<double> covariance_diagonals(otu_table.otu_number, iterations);
+    // Fill matrix will covariance diagonals
+    int matrix_column = 0;
+    for (std::vector<arma::Col<double>>::iterator it = covariance_vector.begin(); it != covariance_vector.end(); ++it) {
+        covariance_diagonals.col(matrix_column) = *it;
+        ++matrix_column;
+    }
+    // Get the median of each i, j element
+    arma::Col<double> median_covariance_diag = arma::median(covariance_diagonals, 1);
+    // Split into coordinate meshed grid
+    arma::Mat<double> median_covariance_y(otu_table.otu_number, otu_table.otu_number);
+    arma::Mat<double> median_covariance_x(otu_table.otu_number, otu_table.otu_number);
+    median_covariance_y.each_col() = median_covariance_diag;
+    median_covariance_x.each_row() = arma::conv_to<arma::Row<double>>::from(median_covariance_diag);
+    // Calculate final median covariance
+    sparcpp_results.median_covariance.reshape(otu_table.otu_number, otu_table.otu_number);
+    sparcpp_results.median_covariance = sparcpp_results.median_correlation % arma::pow(median_covariance_x, 0.5) % arma::pow(median_covariance_y, 0.5);
+    return sparcpp_results;
+}
+
+
 int main() {
     // Set some parameters
-    const int iterations = 20;
+    const int iterations = 10;
     const int exclude_iterations = 10;
 
     // Define some out-of-loop variables
     //std::vector<arma::Mat<double>> correlations;
     std::vector<arma::Mat<double>> correlation_vector;
-    std::vector<arma::Mat<double>> covariance_vector;
+    std::vector<arma::Col<double>> covariance_vector;
 
     // Load the OTU table from file
     std::string otu_filename;
@@ -259,7 +310,7 @@ int main() {
     counts.reshape(otu_table.sample_number, otu_table.otu_number);
 
     for (int i = 0; i < iterations; ++i) {
-        std::cout << "Running iteration: " << i << std::endl;
+        std::cout << "Running iteration: " << i + 1 << std::endl;
         // STEP 1: Estimate component fractions and get log ratio variance
         // TEMP: Will load in a pre-calculated component fraction matrix so that results/steps can be checked
         //arma::Mat<double> fractions = EstimateComponentFractions(&otu_table, &counts);
@@ -298,23 +349,10 @@ int main() {
 
         // Finally add the calculated correlation and covariances to a running vector
         correlation_vector.push_back(basis_results.basis_correlation);
-        covariance_vector.push_back(basis_results.basis_covariance);
+        covariance_vector.push_back(basis_results.basis_covariance.diag());
     }
-    // Get median of all i,j elements across the iterations for correlation
-    // Add correlation matrices to arma Cube so that we can get views of all i, j of each matrix
-    arma::Cube<double> correlation_cube(otu_table.otu_number, otu_table.otu_number, correlation_vector.size());
-    // Fill cube with correlation matrix slices
-    int cube_slice = 0;
-    for (std::vector<arma::Mat<double>>::iterator it = correlation_vector.begin(); it != correlation_vector.end(); ++it) {
-        correlation_cube.slice(cube_slice) = *it;
-        ++cube_slice;
-    }
-    // Get median value for each i, j element across all n iterations
-    arma::Mat<double> median_correlation(otu_table.otu_number, otu_table.otu_number);
-    for (int i = 0; i < otu_table.otu_number; ++i) {
-        for (int j = 0; j < otu_table.otu_number; ++j){
-            arma::Row<double> r = correlation_cube.subcube(arma::span(i), arma::span(j), arma::span());
-            median_correlation(i, j) = arma::median(r);
-        }
-    }
+
+    // Get the median correlatio and covariances
+    struct SparCppResults sparcpp_results = calculateMedianCorAndCov(correlation_vector, covariance_vector,
+                                                                     otu_table, iterations);
 }
