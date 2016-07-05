@@ -36,6 +36,7 @@ struct SparCppResults {
 
 
 struct OtuTable loadOtuFile(std::string filename) {
+    // TODO: Catch now filename or non-existent file
     // Used to store strings from file prior to assignment
     std::string line;
     std::string ele;
@@ -117,33 +118,6 @@ arma::Mat<double> estimateComponentFractions(const struct OtuTable& otu_table, a
     }
     // Free rng memory
     gsl_rng_free(p_rng);
-    return fractions;
-}
-
-
-arma::Mat<double> fromFileGetComponentFractions(const struct OtuTable& otu_table, std::string filename) {
-    // NOTE: This is a temp function to provide a consistent fraction component estimatation. In final build,
-    // the function FileGetComponentFractions will be used.
-    // Defining some variables
-    std::string line;
-    std::string ele;
-    std::stringstream line_stream;
-    std::vector<double> fraction_elements;
-    // Open file stream
-    std::ifstream fractions_file;
-    fractions_file.open(filename);
-    // Load all fraction elements into a vector
-    while (std::getline(fractions_file, line)) {
-        // Add current line to line stream and then split by tabs
-        line_stream.clear();
-        line_stream.str(line);
-        while (std::getline(line_stream, ele, '\t')) {
-            fraction_elements.push_back(std::stod(ele));
-        }
-    }
-    arma::Mat<double> fractions(fraction_elements);
-    fractions.reshape(otu_table.otu_number, otu_table.sample_number);
-    arma::inplace_trans(fractions);
     return fractions;
 }
 
@@ -293,7 +267,7 @@ struct SparCppResults calculateMedianCorAndCov(std::vector<arma::Mat<double>>& c
 
 int main() {
     // Set some parameters
-    const int iterations = 10;
+    const int iterations = 50;
     const int exclude_iterations = 10;
 
     // Define some out-of-loop variables
@@ -302,8 +276,7 @@ int main() {
     std::vector<arma::Col<double>> covariance_vector;
 
     // Load the OTU table from file
-    std::string otu_filename;
-    otu_filename = "fake_data.txt";
+    std::string otu_filename = "fake_data.txt";
     struct OtuTable otu_table = loadOtuFile(otu_filename);
     // Construct count matrix
     arma::Mat<int> counts(otu_table.otu_observations);
@@ -313,8 +286,7 @@ int main() {
         std::cout << "Running iteration: " << i + 1 << std::endl;
         // STEP 1: Estimate component fractions and get log ratio variance
         // TEMP: Will load in a pre-calculated component fraction matrix so that results/steps can be checked
-        //arma::Mat<double> fractions = EstimateComponentFractions(&otu_table, &counts);
-        arma::Mat<double> fractions = fromFileGetComponentFractions(otu_table, "fractions.tsv");
+        arma::Mat<double> fractions = estimateComponentFractions(otu_table, counts);
         arma::Mat<double> variance = calculateLogRatioVariance(fractions);
 
         // STEP 2: Calculate component variation
