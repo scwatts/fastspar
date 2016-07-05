@@ -1,5 +1,6 @@
 #include <fstream>
 #include <iostream>
+#include <iomanip>
 #include <sstream>
 #include <time.h>
 #include <vector>
@@ -265,6 +266,31 @@ struct SparCppResults calculateMedianCorAndCov(std::vector<arma::Mat<double>>& c
 }
 
 
+void writeOutMatrix(arma::Mat<double>& matrix, std::string out_filename, struct OtuTable& otu_table) {
+    // Get stream handle
+    std::ofstream outfile;
+    outfile.open(out_filename);
+    // Write out header
+    outfile << "OTU_id";
+    for (std::vector<std::string>::iterator it = otu_table.otu_ids.begin(); it != otu_table.otu_ids.end(); ++it) {
+        outfile << "\t" << *it;
+    }
+    outfile << std::endl;
+    // Write out values
+    for (int i = 0; i < matrix.n_rows; ++i) {
+        for (int j = 0; j < matrix.n_cols; ++j) {
+            // Write the OTU id as first field in row
+            if (j == 0) {
+                outfile << otu_table.otu_ids[i];
+            }
+            outfile << std::fixed << std::setw(8) << std::setprecision(4) << "\t" <<
+            matrix(i, j);
+        }
+        outfile << std::endl;
+    }
+}
+
+
 int main() {
     // Set some parameters
     const int iterations = 50;
@@ -327,4 +353,8 @@ int main() {
     // Get the median correlatio and covariances
     struct SparCppResults sparcpp_results = calculateMedianCorAndCov(correlation_vector, covariance_vector,
                                                                      otu_table, iterations);
+
+    // Write median correlation and covariance matrices
+    writeOutMatrix(sparcpp_results.median_correlation, "cor_table.tsv", otu_table);
+    writeOutMatrix(sparcpp_results.median_covariance, "cov_table.tsv", otu_table);
 }
