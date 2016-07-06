@@ -93,17 +93,11 @@ struct OtuTable loadOtuFile(std::string filename) {
 }
 
 
-arma::Mat<double> estimateComponentFractions(const struct OtuTable& otu_table, arma::Mat<int>& counts) {
-    // Set up rng environment and seed
-    const gsl_rng_type * rng_type;
-    gsl_rng_env_setup();
-    // gsl_rng_default is a global
-    rng_type = gsl_rng_default;
-    gsl_rng * p_rng = gsl_rng_alloc(gsl_rng_mt19937);
-    gsl_rng_set(p_rng, time(NULL));
+arma::Mat<double> estimateComponentFractions(const struct OtuTable& otu_table, arma::Mat<int>& counts, gsl_rng * p_rng) {
     // TODO: check if it's more efficient to gather fractions and then init arma::Mat (instead of init elements)
     // Estimate fractions by drawing from dirichlet distribution
     arma::Mat<double> fractions(otu_table.sample_number, otu_table.otu_number);
+    fractions.fill(1/otu_table.otu_number);
     for(int i = 0; i < otu_table.sample_number; ++i) {
         // Get arma row and add pseudo count (then convert to double vector for rng function)
         arma::Row<int> row_pseudocount = counts.row(i) + 1;
@@ -117,8 +111,6 @@ arma::Mat<double> estimateComponentFractions(const struct OtuTable& otu_table, a
         arma::Mat<double> estimated_fractions_row(theta, 1, 50);
         fractions.row(i) = estimated_fractions_row;
     }
-    // Free rng memory
-    gsl_rng_free(p_rng);
     return fractions;
 }
 
@@ -301,6 +293,14 @@ int main() {
     std::vector<arma::Mat<double>> correlation_vector;
     std::vector<arma::Col<double>> covariance_vector;
 
+    // Set up rng environment and seed
+    const gsl_rng_type * rng_type;
+    gsl_rng_env_setup();
+    // gsl_rng_default is a global
+    rng_type = gsl_rng_default;
+    gsl_rng * p_rng = gsl_rng_alloc(rng_type);
+    gsl_rng_set(p_rng, time(NULL));
+
     // Load the OTU table from file
     std::string otu_filename = "fake_data.txt";
     struct OtuTable otu_table = loadOtuFile(otu_filename);
@@ -311,8 +311,7 @@ int main() {
     for (int i = 0; i < iterations; ++i) {
         std::cout << "Running iteration: " << i + 1 << std::endl;
         // STEP 1: Estimate component fractions and get log ratio variance
-        // TEMP: Will load in a pre-calculated component fraction matrix so that results/steps can be checked
-        arma::Mat<double> fractions = estimateComponentFractions(otu_table, counts);
+        arma::Mat<double> fractions = estimateComponentFractions(otu_table, counts, p_rng);
         arma::Mat<double> variance = calculateLogRatioVariance(fractions);
 
         // STEP 2: Calculate component variation
@@ -349,6 +348,9 @@ int main() {
         correlation_vector.push_back(basis_results.basis_correlation);
         covariance_vector.push_back(basis_results.basis_covariance.diag());
     }
+
+    // Free rng memory
+    gsl_rng_free(p_rng);
 
     // Get the median correlatio and covariances
     struct SparCppResults sparcpp_results = calculateMedianCorAndCov(correlation_vector, covariance_vector,
