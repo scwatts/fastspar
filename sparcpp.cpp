@@ -1,11 +1,12 @@
 #include <fstream>
-#include <iostream>
 #include <iomanip>
+#include <iostream>
 #include <sstream>
 #include <time.h>
 #include <vector>
 
 #include <armadillo>
+#include <getopt.h>
 #include <gsl/gsl_randist.h>
 
 
@@ -190,7 +191,7 @@ struct BasisResults calculateCorAndCov(const arma::Mat<double>& variance, const 
 
 
 void findAndAddExcludedPairs(struct BasisResults basis_results, struct VarianceResults& variance_results,
-                             const struct OtuTable& otu_table, std::vector<arma::uword>& excluded) {
+                             const struct OtuTable& otu_table, std::vector<arma::uword>& excluded, float threshold) {
     // NOTE: BasisResults are passed by value as we need to makes changes only in this function
     basis_results.basis_correlation.diag().zeros();
     basis_results.basis_correlation = arma::abs(basis_results.basis_correlation);
@@ -200,7 +201,7 @@ void findAndAddExcludedPairs(struct BasisResults basis_results, struct VarianceR
     double max_correlate = basis_results.basis_correlation.max();
     arma::Col<arma::uword> max_correlate_idx = arma::find(basis_results.basis_correlation == max_correlate);
     // If max correlation is above a threshold, subtract one from the appropriate mod matrix positions
-    if (max_correlate > 0.1) {
+    if (max_correlate > threshold) {
         // For each max correlate pair
         for (arma::Col<arma::uword>::iterator it = max_correlate_idx.begin(); it != max_correlate_idx.end(); ++it) {
             // Substract from mod matrix
@@ -286,13 +287,99 @@ void writeOutMatrix(arma::Mat<double>& matrix, std::string out_filename, struct 
 }
 
 
-int main() {
-    // Set some parameters
-    const int iterations = 50;
-    const int exclude_iterations = 10;
+int getIntFromChar(const char* optarg) {
+	// Check at most the first 8 characters are numerical
+	std::string optstring(optarg);
+	std::string string_int = optstring.substr(0, 8);
+	for (std::string::iterator it = string_int.begin(); it != string_int.end(); ++it) {
+		if (!isdigit(*it)) {
+			std::cerr << "This doesn't look like a number: " << optarg << std::endl;;
+			exit(1);
+		}
+	}
+	return std::atoi(string_int.c_str());
+}
+
+
+float getFloatFromChar(const char* optarg) {
+	// Check at most the first 8 characters are numerical
+	std::string optstring(optarg);
+	std::string string_float = optstring.substr(0, 8);
+	for (std::string::iterator it = string_float.begin(); it != string_float.end(); ++it) {
+		if (!isdigit(*it) && (*it) != '.') {
+			std::cerr << "This doesn't look like a float: " << optarg << std::endl;;
+			exit(1);
+		}
+	}
+	return std::atof(string_float.c_str());
+}
+
+
+int main(int argc, char **argv) {
+    // Set some default parameters
+    int iterations = 200;
+    int exclude_iterations = 10;
+    float threshold = 0.1;
+
+	// Declare some important variables
+	std::string correlation_filename;
+	std::string covariance_filename;
+
+	// Commandline arguments (for getlongtops)
+	struct option long_options[] =
+		{
+			{"correlation", required_argument, NULL, 'r'},
+			{"covariance", required_argument, NULL, 'v'},
+			{"iterations", required_argument, NULL, 'i'},
+			{"exclude_iterations", required_argument, NULL, 'x'},
+			{NULL, 0, 0, 0}
+		};
+
+    // Parse commandline arguments
+    while (1) {
+		int option_index = 0;
+		int c;
+		c = getopt_long (argc, argv, "r:v:i:x:t:", long_options, &option_index);
+		if (c == -1) {
+			break;
+		}
+		switch(c) {
+			// TODO: do we need case(0)?
+			case 'r':
+				correlation_filename = optarg;
+				break;
+			case 'v':
+				covariance_filename = optarg;
+				break;
+			case 'i':
+				iterations = getIntFromChar(optarg);
+				break;
+			case 'x':
+				exclude_iterations = getIntFromChar(optarg);
+				break;
+			case 't':
+				threshold = getFloatFromChar(optarg);
+				break;
+			default:
+				exit(1);
+		}
+	}
+	// Abort execution if given unknown arguments
+	if (optind < argc){
+		std::cerr << argv[0] << " invalid argument: " << argv[optind++] << std::endl;
+	}
+	// Make sure we have output filenames
+	if (correlation_filename.size() == 0 || covariance_filename.size() == 0) {
+		std::cerr << "Both options --correlation and --covariance are required\n";
+		exit(1);
+	}
+	// Ensure threshold is less than 100
+	if (threshold > 1) {
+		std::cerr << "Threshold cannot be greather than 1.0\n";
+		exit(1);
+	}
 
     // Define some out-of-loop variables
-    //std::vector<arma::Mat<double>> correlations;
     std::vector<arma::Mat<double>> correlation_vector;
     std::vector<arma::Col<double>> covariance_vector;
 
@@ -331,8 +418,7 @@ int main() {
 
         // STEP 4: Exclude highly correlated pairs, repeating correlation/ covariance calculation each iteration
         for (int j = 0; j < exclude_iterations; ++j) {
-            findAndAddExcludedPairs(basis_results, variance_results, otu_table, excluded);
-            // NOTE: Make sure the previous iteration correlation basis is used
+            findAndAddExcludedPairs(basis_results, variance_results, otu_table, excluded, threshold);
             // Recalculate component variation after pair exclusion
             variance_results = calculateComponentVariance(variance, variance_results.mod, excluded, otu_table);
             // Recalculate correlation and covariance after pair exclusion
@@ -360,6 +446,6 @@ int main() {
                                                                      otu_table, iterations);
 
     // Write median correlation and covariance matrices
-    writeOutMatrix(sparcpp_results.median_correlation, "cor_table.tsv", otu_table);
-    writeOutMatrix(sparcpp_results.median_covariance, "cov_table.tsv", otu_table);
+    writeOutMatrix(sparcpp_results.median_correlation, correlation_filename, otu_table);
+    writeOutMatrix(sparcpp_results.median_covariance, covariance_filename, otu_table);
 }
