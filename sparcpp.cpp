@@ -176,9 +176,9 @@ struct BasisResults calculateCorAndCov(const arma::Mat<double>& variance, const 
                 }
                 // Recalculate correlation after setting cor
                 //double basis_cov_el = basis_cor_el * sqrt(basis_variance(i)) * sqrt(basis_variance(j));
-		// NOTE: I don't think this ever happens, placing an exit here instead
-		std::cerr << "abs(basis_cor_el) is greater and SparCC requires recalculation, uncomment in code\n";
-		exit(1);
+                // NOTE: I don't think this ever happens, placing an exit here instead
+                std::cerr << "abs(basis_cor_el) is greater and SparCC requires recalculation, uncomment in code\n";
+                exit(1);
             }
             // TODO: Check if we can avoid repetition here as well
             // Set basis_correlation and basis_covariance matrices
@@ -288,54 +288,56 @@ void writeOutMatrix(arma::Mat<double>& matrix, std::string out_filename, struct 
 
 
 int getIntFromChar(const char* optarg) {
-	// Check at most the first 8 characters are numerical
-	std::string optstring(optarg);
-	std::string string_int = optstring.substr(0, 8);
-	for (std::string::iterator it = string_int.begin(); it != string_int.end(); ++it) {
-		if (!isdigit(*it)) {
-			std::cerr << "This doesn't look like a number: " << optarg << std::endl;;
-			exit(1);
-		}
-	}
-	return std::atoi(string_int.c_str());
+    // Check at most the first 8 characters are numerical
+    std::string optstring(optarg);
+    std::string string_int = optstring.substr(0, 8);
+    for (std::string::iterator it = string_int.begin(); it != string_int.end(); ++it) {
+        if (!isdigit(*it)) {
+            std::cerr << "This doesn't look like a number: " << optarg << std::endl;;
+            exit(1);
+        }
+    }
+    return std::atoi(string_int.c_str());
 }
 
 
 float getFloatFromChar(const char* optarg) {
-	// Check at most the first 8 characters are numerical
-	std::string optstring(optarg);
-	std::string string_float = optstring.substr(0, 8);
-	for (std::string::iterator it = string_float.begin(); it != string_float.end(); ++it) {
-		if (!isdigit(*it) && (*it) != '.') {
-			std::cerr << "This doesn't look like a float: " << optarg << std::endl;;
-			exit(1);
-		}
-	}
-	return std::atof(string_float.c_str());
+    // Check at most the first 8 characters are numerical
+    std::string optstring(optarg);
+    std::string string_float = optstring.substr(0, 8);
+    for (std::string::iterator it = string_float.begin(); it != string_float.end(); ++it) {
+        if (!isdigit(*it) && (*it) != '.') {
+            std::cerr << "This doesn't look like a float: " << optarg << std::endl;;
+            exit(1);
+        }
+    }
+    return std::atof(string_float.c_str());
 }
 
+
 void printHelp() {
-	std::cerr << "Program: SparCpp (c++ implementation of SparCC)" << std::endl;
-	std::cerr << "Version: 0.1a" << std::endl;
-	std::cerr << "Contact: Stephen Watts (s.watts2@student.unimelb.edu.au)" << std::endl;
-	std::cerr << std::endl;
-	std::cerr << "Usage:" << std::endl;
-    std::cerr << "	sparcpp [options] --otu_table <of> --correlation <rf> --covariance <vf>" << std::endl;
-	std::cerr << std::endl;
-    std::cerr << "	<of> OTU input table" << std::endl;
-    std::cerr << "	<rf> Correlation output table" << std::endl;
-    std::cerr << "	<vf> Covariance output table" << std::endl;
-	std::cerr << std::endl;
-	std::cerr << "Options:" << std::endl;
-    std::cerr << "	-h, --help    show this help message and exit" << std::endl;
-    std::cerr << "	-i <int>, --iterations <int>" << std::endl;
+    std::cerr << "Program: SparCpp (c++ implementation of SparCC)" << std::endl;
+    std::cerr << "Version: 0.1a" << std::endl;
+    std::cerr << "Contact: Stephen Watts (s.watts2@student.unimelb.edu.au)" << std::endl;
+    std::cerr << std::endl;
+    std::cerr << "Usage:" << std::endl;
+    std::cerr << "  sparcpp [options] --otu_table <of> --correlation <rf> --covariance <vf>" << std::endl;
+    std::cerr << std::endl;
+    std::cerr << "  <of> OTU input table" << std::endl;
+    std::cerr << "  <rf> Correlation output table" << std::endl;
+    std::cerr << "  <vf> Covariance output table" << std::endl;
+    std::cerr << std::endl;
+    std::cerr << "Options:" << std::endl;
+    std::cerr << "  -h, --help    show this help message and exit" << std::endl;
+    std::cerr << "  -i <int>, --iterations <int>" << std::endl;
     std::cerr << "                Number of interations to perform (50 default)" << std::endl;
-    std::cerr << "	-x <int>, --exclusion_iterations <int>" << std::endl;
+    std::cerr << "  -x <int>, --exclusion_iterations <int>" << std::endl;
     std::cerr << "                Number of exclusion interations to perform (10 default)" << std::endl;
-    std::cerr << "	-t <float>, --exclusion_iterations <float>" << std::endl;
+    std::cerr << "  -t <float>, --exclusion_iterations <float>" << std::endl;
     std::cerr << "                Correlation strength exclusion threshold (0.1 default)" << std::endl;
 
 }
+
 
 int main(int argc, char **argv) {
     // Set some default parameters
@@ -343,103 +345,103 @@ int main(int argc, char **argv) {
     int exclude_iterations = 10;
     float threshold = 0.1;
 
-	// Declare some important variables
+    // Declare some important variables
     std::string otu_filename;
-	std::string correlation_filename;
-	std::string covariance_filename;
+    std::string correlation_filename;
+    std::string covariance_filename;
 
-	// Commandline arguments (for getlongtops)
-	struct option long_options[] =
-		{
-			{"otu_table", required_argument, NULL, 't'},
-			{"correlation", required_argument, NULL, 'r'},
-			{"covariance", required_argument, NULL, 'v'},
-			{"iterations", required_argument, NULL, 'i'},
-			{"exclude_iterations", required_argument, NULL, 'x'},
-			{"threshold", required_argument, NULL, 'e'},
-			{"help", no_argument, NULL, 'h'},
-			{NULL, 0, 0, 0}
-		};
+    // Commandline arguments (for getlongtops)
+    struct option long_options[] =
+        {
+            {"otu_table", required_argument, NULL, 't'},
+            {"correlation", required_argument, NULL, 'r'},
+            {"covariance", required_argument, NULL, 'v'},
+            {"iterations", required_argument, NULL, 'i'},
+            {"exclude_iterations", required_argument, NULL, 'x'},
+            {"threshold", required_argument, NULL, 'e'},
+            {"help", no_argument, NULL, 'h'},
+            {NULL, 0, 0, 0}
+        };
 
-	// Check if have an attemp at arguments, else print help
-	if (argc < 2) {
-		printHelp();
-		std::cerr << std::endl << argv[0];
-		std::cerr << ": error: options -t/--otu_table, -r/--correlation, and -v/--covariance are required" << std::endl;
-		exit(0);
-	}
+    // Check if have an attemp at arguments, else print help
+    if (argc < 2) {
+        printHelp();
+        std::cerr << std::endl << argv[0];
+        std::cerr << ": error: options -t/--otu_table, -r/--correlation, and -v/--covariance are required" << std::endl;
+        exit(0);
+    }
 
     // Parse commandline arguments
     while (1) {
-		int option_index = 0;
-		int c;
-		c = getopt_long (argc, argv, "t:r:v:i:x:e:", long_options, &option_index);
-		if (c == -1) {
-			break;
-		}
-		switch(c) {
-			// TODO: do we need case(0)?
-			case 't':
-				otu_filename = optarg;
-				break;
-			case 'r':
-				correlation_filename = optarg;
-				break;
-			case 'v':
-				covariance_filename = optarg;
-				break;
-			case 'i':
-				iterations = getIntFromChar(optarg);
-				break;
-			case 'x':
-				exclude_iterations = getIntFromChar(optarg);
-				break;
-			case 'e':
-				threshold = getFloatFromChar(optarg);
-				break;
-			case 'h':
-				printHelp();
-				exit(0);
-			default:
-				exit(1);
-		}
-	}
-	// Abort execution if given unknown arguments
-	if (optind < argc){
-		std::cerr << argv[0] << " invalid argument: " << argv[optind++] << std::endl;
-	}
-	// Make sure we have filenames
-	if (otu_filename.empty()) {
-		printHelp();
-		std::cerr << std::endl << argv[0];
-		std::cerr << ": error: argument -t/--otu_table is required" << std::endl;
-		exit(1);
-	}
-	if (correlation_filename.empty()) {
-		printHelp();
-		std::cerr << std::endl << argv[0];
-		std::cerr << ": error: argument -r/--correlation is required" << std::endl;
-		exit(1);
-	}
-	if (covariance_filename.empty()) {
-		printHelp();
-		std::cerr << std::endl << argv[0];
-		std::cerr << ": error: argument -v/--covariance is required" << std::endl;
-		exit(1);
-	}
-	// Ensure threshold is less than 100
-	if (threshold > 1) {
-		std::cerr << "Threshold cannot be greather than 1.0\n";
-		exit(1);
-	}
-	// Check that the OTU file exists
-	std::ifstream otu_file;
-	otu_file.open(otu_filename);
-	if (!otu_file.good()) {
-		std::cerr << std::endl << argv[0];
-		std::cerr << ": error: OTU table file " << otu_filename << " does not exist" << std::endl;
-		exit(1);
-	}
+        int option_index = 0;
+        int c;
+        c = getopt_long (argc, argv, "t:r:v:i:x:e:", long_options, &option_index);
+        if (c == -1) {
+            break;
+        }
+        switch(c) {
+            // TODO: do we need case(0)?
+            case 't':
+                otu_filename = optarg;
+                break;
+            case 'r':
+                correlation_filename = optarg;
+                break;
+            case 'v':
+                covariance_filename = optarg;
+                break;
+            case 'i':
+                iterations = getIntFromChar(optarg);
+                break;
+            case 'x':
+                exclude_iterations = getIntFromChar(optarg);
+                break;
+            case 'e':
+                threshold = getFloatFromChar(optarg);
+                break;
+            case 'h':
+                printHelp();
+                exit(0);
+            default:
+                exit(1);
+        }
+    }
+    // Abort execution if given unknown arguments
+    if (optind < argc){
+        std::cerr << argv[0] << " invalid argument: " << argv[optind++] << std::endl;
+    }
+    // Make sure we have filenames
+    if (otu_filename.empty()) {
+        printHelp();
+        std::cerr << std::endl << argv[0];
+        std::cerr << ": error: argument -t/--otu_table is required" << std::endl;
+        exit(1);
+    }
+    if (correlation_filename.empty()) {
+        printHelp();
+        std::cerr << std::endl << argv[0];
+        std::cerr << ": error: argument -r/--correlation is required" << std::endl;
+        exit(1);
+    }
+    if (covariance_filename.empty()) {
+        printHelp();
+        std::cerr << std::endl << argv[0];
+        std::cerr << ": error: argument -v/--covariance is required" << std::endl;
+        exit(1);
+    }
+    // Ensure threshold is less than 100
+    if (threshold > 1) {
+        std::cerr << "Threshold cannot be greather than 1.0\n";
+        exit(1);
+    }
+    // Check that the OTU file exists
+    std::ifstream otu_file;
+    otu_file.open(otu_filename);
+    if (!otu_file.good()) {
+        std::cerr << std::endl << argv[0];
+        std::cerr << ": error: OTU table file " << otu_filename << " does not exist" << std::endl;
+        exit(1);
+    }
 
     // Define some out-of-loop variables
     std::vector<arma::Mat<double>> correlation_vector;
