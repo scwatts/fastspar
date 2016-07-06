@@ -119,8 +119,8 @@ arma::Mat<double> calculateLogRatioVariance(const arma::Mat<double>& fractions) 
     // TODO: Given this is a square mat, check that we're required to iterate over all as in SparCC (thinking only half)
     // TODO: !IMPORTANT we're not assigning all elements in the variance matrix, is this correct?
     arma::Mat<double> variance(fractions.n_cols, fractions.n_cols, arma::fill::zeros);
-    for (int i = 0; i < fractions.n_cols - 1; ++i) {
-        for (int j = i + 1; j < fractions.n_cols; ++j) {
+    for (unsigned int i = 0; i < fractions.n_cols - 1; ++i) {
+        for (unsigned int j = i + 1; j < fractions.n_cols; ++j) {
             arma::Col<double> log_ratio_col = arma::log(fractions.col(i) / fractions.col(j));
             double col_variance = arma::var(log_ratio_col);
             variance(i, j) = variance(j, i) = col_variance;
@@ -174,7 +174,10 @@ struct BasisResults calculateCorAndCov(const arma::Mat<double>& variance, const 
                     basis_cor_el = 1;
                 }
                 // Recalculate correlation after setting cor
-                double basis_cov_el = basis_cor_el * sqrt(basis_variance(i)) * sqrt(basis_variance(j));
+                //double basis_cov_el = basis_cor_el * sqrt(basis_variance(i)) * sqrt(basis_variance(j));
+		// NOTE: I don't think this ever happens, placing an exit here instead
+		std::cerr << "abs(basis_cor_el) is greater and SparCC requires recalculation, uncomment in code\n";
+		exit(1);
             }
             // TODO: Check if we can avoid repetition here as well
             // Set basis_correlation and basis_covariance matrices
@@ -269,8 +272,8 @@ void writeOutMatrix(arma::Mat<double>& matrix, std::string out_filename, struct 
     }
     outfile << std::endl;
     // Write out values
-    for (int i = 0; i < matrix.n_rows; ++i) {
-        for (int j = 0; j < matrix.n_cols; ++j) {
+    for (unsigned int i = 0; i < matrix.n_rows; ++i) {
+        for (unsigned int j = 0; j < matrix.n_cols; ++j) {
             // Write the OTU id as first field in row
             if (j == 0) {
                 outfile << otu_table.otu_ids[i];
