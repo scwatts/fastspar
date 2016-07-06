@@ -109,7 +109,7 @@ arma::Mat<double> estimateComponentFractions(const struct OtuTable& otu_table, a
         // The function takes double arrays and it seems that you must pass the address of the first element to function
         gsl_ran_dirichlet(p_rng, row_size, &row_pseudocount_vector[0], theta);
         // Create arma::Row from double[] and update fractions row
-        arma::Mat<double> estimated_fractions_row(theta, 1, 50);
+        arma::Mat<double> estimated_fractions_row(theta, 1, otu_table.otu_number);
         fractions.row(i) = estimated_fractions_row;
     }
     return fractions;
@@ -341,7 +341,7 @@ void printHelp() {
 
 int main(int argc, char **argv) {
     // Set some default parameters
-    int iterations = 200;
+    int iterations = 20;
     int exclude_iterations = 10;
     float threshold = 0.1;
 
