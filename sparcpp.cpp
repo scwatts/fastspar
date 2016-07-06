@@ -320,8 +320,9 @@ void printHelp() {
 	std::cerr << "Contact: Stephen Watts (s.watts2@student.unimelb.edu.au)" << std::endl;
 	std::cerr << std::endl;
 	std::cerr << "Usage:" << std::endl;
-    std::cerr << "	sparcpp [options] --correlation <rf> --covariance <vf>" << std::endl;
+    std::cerr << "	sparcpp [options] --otu_table <of> --correlation <rf> --covariance <vf>" << std::endl;
 	std::cerr << std::endl;
+    std::cerr << "	<of> OTU input table" << std::endl;
     std::cerr << "	<rf> Correlation output table" << std::endl;
     std::cerr << "	<vf> Covariance output table" << std::endl;
 	std::cerr << std::endl;
@@ -343,16 +344,19 @@ int main(int argc, char **argv) {
     float threshold = 0.1;
 
 	// Declare some important variables
+    std::string otu_filename;
 	std::string correlation_filename;
 	std::string covariance_filename;
 
 	// Commandline arguments (for getlongtops)
 	struct option long_options[] =
 		{
+			{"otu_table", required_argument, NULL, 't'},
 			{"correlation", required_argument, NULL, 'r'},
 			{"covariance", required_argument, NULL, 'v'},
 			{"iterations", required_argument, NULL, 'i'},
 			{"exclude_iterations", required_argument, NULL, 'x'},
+			{"threshold", required_argument, NULL, 'e'},
 			{"help", no_argument, NULL, 'h'},
 			{NULL, 0, 0, 0}
 		};
@@ -361,7 +365,7 @@ int main(int argc, char **argv) {
 	if (argc < 2) {
 		printHelp();
 		std::cerr << std::endl << argv[0];
-		std::cerr << ": error: both options --correlation and --covariance are required" << std::endl;
+		std::cerr << ": error: options -t/--otu_table, -r/--correlation, and -v/--covariance are required" << std::endl;
 		exit(0);
 	}
 
@@ -369,12 +373,15 @@ int main(int argc, char **argv) {
     while (1) {
 		int option_index = 0;
 		int c;
-		c = getopt_long (argc, argv, "r:v:i:x:t:", long_options, &option_index);
+		c = getopt_long (argc, argv, "t:r:v:i:x:e:", long_options, &option_index);
 		if (c == -1) {
 			break;
 		}
 		switch(c) {
 			// TODO: do we need case(0)?
+			case 't':
+				otu_filename = optarg;
+				break;
 			case 'r':
 				correlation_filename = optarg;
 				break;
@@ -387,7 +394,7 @@ int main(int argc, char **argv) {
 			case 'x':
 				exclude_iterations = getIntFromChar(optarg);
 				break;
-			case 't':
+			case 'e':
 				threshold = getFloatFromChar(optarg);
 				break;
 			case 'h':
@@ -401,16 +408,36 @@ int main(int argc, char **argv) {
 	if (optind < argc){
 		std::cerr << argv[0] << " invalid argument: " << argv[optind++] << std::endl;
 	}
-	// Make sure we have output filenames
-	if (correlation_filename.size() == 0 || covariance_filename.size() == 0) {
+	// Make sure we have filenames
+	if (otu_filename.empty()) {
 		printHelp();
 		std::cerr << std::endl << argv[0];
-		std::cerr << ": error: both options --correlation and --covariance are required" << std::endl;
+		std::cerr << ": error: argument -t/--otu_table is required" << std::endl;
+		exit(1);
+	}
+	if (correlation_filename.empty()) {
+		printHelp();
+		std::cerr << std::endl << argv[0];
+		std::cerr << ": error: argument -r/--correlation is required" << std::endl;
+		exit(1);
+	}
+	if (covariance_filename.empty()) {
+		printHelp();
+		std::cerr << std::endl << argv[0];
+		std::cerr << ": error: argument -v/--covariance is required" << std::endl;
 		exit(1);
 	}
 	// Ensure threshold is less than 100
 	if (threshold > 1) {
 		std::cerr << "Threshold cannot be greather than 1.0\n";
+		exit(1);
+	}
+	// Check that the OTU file exists
+	std::ifstream otu_file;
+	otu_file.open(otu_filename);
+	if (!otu_file.good()) {
+		std::cerr << std::endl << argv[0];
+		std::cerr << ": error: OTU table file " << otu_filename << " does not exist" << std::endl;
 		exit(1);
 	}
 
@@ -426,10 +453,8 @@ int main(int argc, char **argv) {
     gsl_rng * p_rng = gsl_rng_alloc(rng_type);
     gsl_rng_set(p_rng, time(NULL));
 
-    // Load the OTU table from file
-    std::string otu_filename = "fake_data.txt";
+    // Load the OTU table from file and construct count matrix
     struct OtuTable otu_table = loadOtuFile(otu_filename);
-    // Construct count matrix
     arma::Mat<int> counts(otu_table.otu_observations);
     counts.reshape(otu_table.sample_number, otu_table.otu_number);
 
