@@ -314,6 +314,27 @@ float getFloatFromChar(const char* optarg) {
 	return std::atof(string_float.c_str());
 }
 
+void printHelp() {
+	std::cerr << "Program: SparCpp (c++ implementation of SparCC)" << std::endl;
+	std::cerr << "Version: 0.1a" << std::endl;
+	std::cerr << "Contact: Stephen Watts (s.watts2@student.unimelb.edu.au)" << std::endl;
+	std::cerr << std::endl;
+	std::cerr << "Usage:" << std::endl;
+    std::cerr << "	sparcpp [options] --correlation <rf> --covariance <vf>" << std::endl;
+	std::cerr << std::endl;
+    std::cerr << "	<rf> Correlation output table" << std::endl;
+    std::cerr << "	<vf> Covariance output table" << std::endl;
+	std::cerr << std::endl;
+	std::cerr << "Options:" << std::endl;
+    std::cerr << "	-h, --help    show this help message and exit" << std::endl;
+    std::cerr << "	-i <int>, --iterations <int>" << std::endl;
+    std::cerr << "                Number of interations to perform (50 default)" << std::endl;
+    std::cerr << "	-x <int>, --exclusion_iterations <int>" << std::endl;
+    std::cerr << "                Number of exclusion interations to perform (10 default)" << std::endl;
+    std::cerr << "	-t <float>, --exclusion_iterations <float>" << std::endl;
+    std::cerr << "                Correlation strength exclusion threshold (0.1 default)" << std::endl;
+
+}
 
 int main(int argc, char **argv) {
     // Set some default parameters
@@ -332,8 +353,17 @@ int main(int argc, char **argv) {
 			{"covariance", required_argument, NULL, 'v'},
 			{"iterations", required_argument, NULL, 'i'},
 			{"exclude_iterations", required_argument, NULL, 'x'},
+			{"help", no_argument, NULL, 'h'},
 			{NULL, 0, 0, 0}
 		};
+
+	// Check if have an attemp at arguments, else print help
+	if (argc < 2) {
+		printHelp();
+		std::cerr << std::endl << argv[0];
+		std::cerr << ": error: both options --correlation and --covariance are required" << std::endl;
+		exit(0);
+	}
 
     // Parse commandline arguments
     while (1) {
@@ -360,6 +390,9 @@ int main(int argc, char **argv) {
 			case 't':
 				threshold = getFloatFromChar(optarg);
 				break;
+			case 'h':
+				printHelp();
+				exit(0);
 			default:
 				exit(1);
 		}
@@ -370,7 +403,9 @@ int main(int argc, char **argv) {
 	}
 	// Make sure we have output filenames
 	if (correlation_filename.size() == 0 || covariance_filename.size() == 0) {
-		std::cerr << "Both options --correlation and --covariance are required\n";
+		printHelp();
+		std::cerr << std::endl << argv[0];
+		std::cerr << ": error: both options --correlation and --covariance are required" << std::endl;
 		exit(1);
 	}
 	// Ensure threshold is less than 100
