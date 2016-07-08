@@ -268,7 +268,7 @@ void writeOutMatrix(arma::Mat<double>& matrix, std::string out_filename, struct 
     std::ofstream outfile;
     outfile.open(out_filename);
     // Write out header
-    outfile << "OTU_id";
+    outfile << "#OTU ID";
     for (std::vector<std::string>::iterator it = otu_table.otu_ids.begin(); it != otu_table.otu_ids.end(); ++it) {
         outfile << "\t" << *it;
     }
@@ -324,9 +324,12 @@ void printHelp() {
     std::cerr << "Usage:" << std::endl;
     std::cerr << "  sparcpp [options] --otu_table <of> --correlation <rf> --covariance <vf>" << std::endl;
     std::cerr << std::endl;
-    std::cerr << "  <of> OTU input table" << std::endl;
-    std::cerr << "  <rf> Correlation output table" << std::endl;
-    std::cerr << "  <vf> Covariance output table" << std::endl;
+    std::cerr << "  -t <of>, --otu_table <of>" << std::endl;
+    std::cerr << "                OTU input table" << std::endl;
+    std::cerr << "  -r <rf>, -correlation <rf>" << std::endl;
+    std::cerr << "                Correlation output table" << std::endl;
+    std::cerr << "  -v <vf>, --covariance <vf>" << std::endl;
+    std::cerr << "                Covariance output table" << std::endl;
     std::cerr << std::endl;
     std::cerr << "Options:" << std::endl;
     std::cerr << "  -h, --help    show this help message and exit" << std::endl;
@@ -376,7 +379,7 @@ int main(int argc, char **argv) {
     while (1) {
         int option_index = 0;
         int c;
-        c = getopt_long (argc, argv, "t:r:v:i:x:e:", long_options, &option_index);
+        c = getopt_long (argc, argv, "ht:r:v:i:x:e:", long_options, &option_index);
         if (c == -1) {
             break;
         }

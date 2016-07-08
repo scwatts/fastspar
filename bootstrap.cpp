@@ -82,7 +82,7 @@ void writeOutMatrix(arma::Mat<int>& matrix, std::string out_filename, struct Otu
     std::ofstream outfile;
     outfile.open(out_filename);
     // Write out header
-    outfile << "OTU_id";
+    outfile << "#OTU ID";
     for (std::vector<std::string>::iterator it = otu_table.otu_ids.begin(); it != otu_table.otu_ids.end(); ++it) {
         outfile << "\t" << *it;
     }
@@ -158,7 +158,7 @@ int main(int argc, char **argv) {
     while (1) {
         int option_index = 0;
         int c;
-        c = getopt_long (argc, argv, "t:p:n:", long_options, &option_index);
+        c = getopt_long (argc, argv, "ht:p:n:", long_options, &option_index);
         if (c == -1) {
             break;
         }
