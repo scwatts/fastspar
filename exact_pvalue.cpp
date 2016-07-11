@@ -152,11 +152,11 @@ void countValuesMoreExtreme(arma::Mat<double>& abs_observed_correlation,
 
 
 double factorial(double number) {
-    if (number == 1  || number == 0) {
-        return 1;
-    } else {
-        return number * factorial(number - 1);
+    double fact = 1;
+    for (int i = 1; i <= number; ++i) {
+        fact *= i;
     }
+    return fact;
 }
 
 
