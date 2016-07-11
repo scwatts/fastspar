@@ -143,7 +143,7 @@ void countValuesMoreExtreme(arma::Mat<double>& abs_observed_correlation,
                             arma::Mat<int>& extreme_value_counts) {
     // Find values more extreme than observed in bootstrap for each i,j element
     arma::Col<arma::uword> extreme_value_index = arma::find(abs_bootstrap_correlation >= abs_observed_correlation);
-    // For each more extreme value, increment count in extreme_value_couts
+    // For each more extreme value, increment count in extreme_value_counts
     for (arma::Col<arma::uword>::iterator it = extreme_value_index.begin(); it != extreme_value_index.end(); ++it) {
         extreme_value_counts(*it) += 1;
     }
@@ -161,11 +161,11 @@ double factorial(double number) {
 
 
 double calculatePossiblePermutationsForOTU(std::unordered_map<int, int>& count_frequency, struct OtuTable& otu_table) {
+    // The total permutations for a single OTU can be calculated by factorial division. We try to
+    // simplify it here (ported from R code authored by Scott Ritchie)
     int max = 0;
     double numerator = 1;
     double denominator = 1;
-    // The total permutations for a single OTU can be calculated by factorial division. We try to
-    // simplify it here (credit to Scott Richie for method)
     for (std::unordered_map<int, int>::iterator it = count_frequency.begin(); it != count_frequency.end(); ++it) {
         // Factorial of 1 is 1
         if (it->second == 1){
@@ -190,6 +190,74 @@ double calculatePossiblePermutationsForOTU(std::unordered_map<int, int>& count_f
     // Finally calculate possible permutations for the OTU
     // TODO: This method can produce Inf, is this okay?
     return numerator / denominator;
+}
+
+
+double calculateExactPvalue(double otu_pair_possible_permutations, arma::Mat<int>& extreme_value_counts,
+                                int& permutations, int& i, int& j) {
+    // Function adapted and ported from statmod::permp
+    // This cast is messy (also can't pass otu_pair as double reference for some reason)
+    double prob[(int)otu_pair_possible_permutations];
+    double prob_binom_sum = 0;
+    for (int i = 0; i < otu_pair_possible_permutations; ++i) {
+        prob[i] = (double)(i + 1) / otu_pair_possible_permutations;
+    }
+    for (int i = 0; i < otu_pair_possible_permutations; ++i) {
+        prob_binom_sum += gsl_cdf_binomial_P(extreme_value_counts(i, j), prob[i], permutations);
+    }
+    // Return p-value
+    return prob_binom_sum / otu_pair_possible_permutations;
+}
+
+
+double calculatePvalueWithIntegralEstimate(double& otu_pair_possible_permutations, arma::Mat<int>& extreme_value_counts,
+                                            int& permutations, int& i, int& j) {
+    // Function adapted and ported from statmod::permp and statmod::gaussquad
+    // TODO: See if there is a better way to init array elements w/o hard coding
+    // Start statmod::gaussquad port
+    // Declare variables for c_gausq2 call
+    int n = 128;
+    double a[n];
+    double b[n];
+    double z[n];
+    int ierr = 0;
+
+    // Initialise array elements for c_gausq2 call
+    for (int i = 0; i < n; ++i) {
+        a[i] = 0;
+        z[i] = 0;
+    }
+    for (int i = 0; i < (n - 1); ++i){
+        int i1 = i + 1;
+        b[i] = i1 / sqrt(4 * pow(i1, 2) - 1);
+    }
+    b[n] = 0;
+    z[0] = 1;
+
+    // Make call to Fortran subroutine. Variables a, b, z and ierr are modified
+    c_gausq2(&n, a, b, z, &ierr);
+
+    // Further cals
+    double u = 0.5 / otu_pair_possible_permutations;
+    double weights[n];
+    double nodes[n];
+    for (int i = 0; i < n; ++i) {
+        weights[i] = pow(z[i], 2);
+    }
+    for (int i = 0; i < n; ++i) {
+        nodes[i] = u * (a[i] + 1) / 2;
+    }
+    // End statmod::gaussquad port
+
+    // Start statmod::permp port
+    double weight_prob_product_sum = 0;
+    for (int i = 0; i < n; ++i) {
+        weight_prob_product_sum += gsl_cdf_binomial_P(extreme_value_counts(i, j), nodes[i], permutations) * weights[i];
+    }
+    double integral = 0.5 / (otu_pair_possible_permutations * weight_prob_product_sum);
+    // TODO: Check if the double cast correctly done (it is required but maybe adding 1.0 instead of 1 is sufficient)
+    // End statmod::permp port with p-value return
+    return ((double)extreme_value_counts(i, j) + 1) / ((double)permutations + 1) - integral;
 }
 
 
@@ -405,65 +473,16 @@ int main(int argc, char **argv) {
             // Get the total possible permutations between the OTU pair
             // TODO: Check if this is producing desired results
             double otu_pair_possible_permutations = possible_permutations(i) * possible_permutations(j);
-            // Start statmod::permp port
+            // The 'if' code in block below was ported from statmod::permp and statmod::gaussquad
             if (otu_pair_possible_permutations <= 10000 ) {
                 // Exact p-value calculation
-                double prob[(int)otu_pair_possible_permutations];
-                double prob_binom_sum = 0;
-                for (int i = 0; i < otu_pair_possible_permutations; ++i) {
-                    prob[i] = (double)(i + 1) / otu_pair_possible_permutations;
-                }
-                for (int i = 0; i < otu_pair_possible_permutations; ++i) {
-                    prob_binom_sum += gsl_cdf_binomial_P(extreme_value_counts(i, j), prob[i], permutations);
-                }
-                pvalues(i, j) = prob_binom_sum / otu_pair_possible_permutations;
+                // If fewer than 10000 possible permutations, we can safely cast double to int
+                pvalues(i, j) = calculateExactPvalue((int)otu_pair_possible_permutations, extreme_value_counts, permutations, i, j);
             } else {
                 // Integral approximation for p-value calculation
-                // Start statmod::gaussquad port
-                // TODO: See if there is a better way to init array elements w/o hard coding
-                int n = 128;
-                double a[n];
-                double b[n];
-                double z[n];
-                int ierr = 0;
-
-                // Initialise array elements
-                for (int i = 0; i < n; ++i) {
-                    a[i] = 0;
-                    z[i] = 0;
-                }
-                for (int i = 0; i < (n - 1); ++i){
-                    int i1 = i + 1;
-                    b[i] = i1 / sqrt(4 * pow(i1, 2) - 1);
-                }
-                b[n] = 0;
-                z[0] = 1;
-
-                // Make call to Fortran subroutine. Variables a, b, z and ierr are modified
-                c_gausq2(&n, a, b, z, &ierr);
-
-                // Further cals
-                double u = 0.5 / otu_pair_possible_permutations;
-                double weights[n];
-                double nodes[n];
-                for (int i = 0; i < n; ++i) {
-                    weights[i] = pow(z[i], 2);
-                }
-                for (int i = 0; i < n; ++i) {
-                    nodes[i] = u * (a[i] + 1) / 2;
-                }
-                // End statmod::gaussquad port
-
-                double weight_prob_product_sum = 0;
-                for (int i = 0; i < n; ++i) {
-                    weight_prob_product_sum += gsl_cdf_binomial_P(extreme_value_counts(i, j), nodes[i], permutations) * weights[i];
-                }
-                double integral = 0.5 / (otu_pair_possible_permutations * weight_prob_product_sum);
-                pvalues(i, j) = ((double)extreme_value_counts(i, j) + 1) / ((double)permutations + 1) - integral;
+                pvalues(i, j) = calculatePvalueWithIntegralEstimate(otu_pair_possible_permutations, extreme_value_counts, permutations, i, j);
             }
-            // End statmod::permp port
         }
-        break;
     }
 
 
