@@ -193,7 +193,7 @@ double calculatePossiblePermutationsForOTU(std::unordered_map<int, int>& count_f
 }
 
 
-void writeOutMatrix(arma::Mat<int>& matrix, std::string out_filename, struct OtuTable& otu_table) {
+void writeOutMatrix(arma::Mat<double>& matrix, std::string out_filename, struct OtuTable& otu_table) {
     // Get stream handle
     std::ofstream outfile;
     outfile.open(out_filename);
@@ -210,7 +210,7 @@ void writeOutMatrix(arma::Mat<int>& matrix, std::string out_filename, struct Otu
             if (j == 0) {
                 outfile << otu_table.sample_names[i];
             }
-            outfile << "\t" << matrix(i, j);
+            outfile << "\t" << std::fixed << std::setprecision(4) << matrix(i, j);
         }
         outfile << std::endl;
     }
@@ -452,4 +452,8 @@ int main(int argc, char **argv) {
             // End statmod::permp port
         }
     }
+
+
+    // Write out p-values
+    writeOutMatrix(pvalues, "pvalues.tsv", otu_table);
 }
