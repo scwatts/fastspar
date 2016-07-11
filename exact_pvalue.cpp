@@ -150,6 +150,16 @@ void countValuesMoreExtreme(arma::Mat<double>& abs_observed_correlation,
 
 }
 
+
+int factorial(int number) {
+    if (number == 1  || number == 0) {
+        return 1;
+    } else {
+        return number * factorial(number - 1);
+    }
+}
+
+
 void writeOutMatrix(arma::Mat<int>& matrix, std::string out_filename, struct OtuTable& otu_table) {
     // Get stream handle
     std::ofstream outfile;
@@ -321,7 +331,7 @@ int main(int argc, char **argv) {
     arma::Mat<double> observed_correlation = loadCorrelation(correlation_filename, otu_table);
     arma::Mat<double> abs_observed_correlation = arma::abs(observed_correlation);
 
-    // For through vector of bootstrap correlations and count values for i, j elements that are more extreme than obs
+    // Loop through vector of bootstrap correlations and count values for i, j elements that are more extreme than obs
     arma::Mat<int> extreme_value_counts(otu_table.otu_number, otu_table.otu_number, arma::fill::zeros);
     std::vector<std::string> bs_cor_paths = getBootstrapCorrelationPaths(bootstrap_prefix);
     for (std::vector<std::string>::iterator it = bs_cor_paths.begin(); it != bs_cor_paths.end(); ++it) {
@@ -330,36 +340,54 @@ int main(int argc, char **argv) {
         countValuesMoreExtreme(abs_observed_correlation, abs_bootstrap_correlation, extreme_value_counts);
     }
 
-    // Calculate total possible permutations  for each OTU (need to take into account floating error)
+    // Calculate total possible permutations for each OTU
+    // First we need to get the frequency of each count for an OTU across all samples
     std::unordered_map<int, int> count_frequency;
+    double numerator = 1;
+    double denominator = 1;
+    double possible_permutations;
+    int max;
     for (arma::Mat<int>::col_iterator it = counts.begin_col(0); it != counts.end_col(0); ++it) {
         ++count_frequency[*it];
     }
-    // Get factorial product (fac then multiple all together) of all but the most frequent
-    //          freqs_not_highest <- freqs(!max(freqs))
-    //          denominator <- Reduce('*', factorial(freqs_not_highest))
-    // Multiple reduce the sequence from number of samples down to (highest frequency + 1)
-    //          seq <- otu_table.sample_number:(highest_freq +1)
-    //          numerator <- multiple_reduce(seq)
-    //  Divide numerator by denominator. This is import as calculating factorials over ~170 is not
-    //  feasible (but can be approximated)
+    // The total permutations for a single OTU can be calculated by factorial division. We try to
+    // simplify it here (credit to Scott Richie for method)
     for (std::unordered_map<int, int>::iterator it = count_frequency.begin(); it != count_frequency.end(); ++it) {
-        it->first;
-        it->second;
+        // Factorial of 1 is 1
+        if (it->second == 1){
+            continue;
+        }
+        // This part simplifies factorial division - we cancel largest/remove denominator
+        if (it->second > max) {
+            // If previous max was greater than 0, multiply denominator by factorial(max)
+            if (max > 0){
+                denominator *= factorial(max);
+            }
+            // Assigned new max
+            max = it->second;
+        } else {
+                denominator *= factorial(it->second);
+        }
     }
-    //counts.col(0).print();
+    // Calculate the simpilfied numerator
+    for (int i = otu_table.sample_number; i > max; --i) {
+        numerator *= i;
+    }
+    possible_permutations = numerator / denominator;
 
+
+    // TODO: Calculate possible permutations for each OTU. Then we need the product of possible
+    // permutations for each OTU pair for p-value calculation
 
     // TEMP
-    int possible_permutations = 10000;
     int more_extreme_count = 2;
+    double pvalue;
 
     // Start statmod::permp
     if (possible_permutations <= 10000 ) {
         // Exact p-value calculation
-        double prob[possible_permutations];
+        double prob[(int)possible_permutations];
         double prob_binom_sum;
-        double pvalue;
         for (int i = 0; i < possible_permutations; ++i) {
             prob[i] = (double)(i + 1) / possible_permutations;
         }
@@ -409,7 +437,8 @@ int main(int argc, char **argv) {
             weight_prob_product_sum += gsl_cdf_binomial_P(more_extreme_count, nodes[i], permutations) * weights[i];
         }
         double integral = 0.5 / (possible_permutations * weight_prob_product_sum);
-        double pvalue = ((double)more_extreme_count + 1) / ((double)permutations + 1) - integral;
+        pvalue = ((double)more_extreme_count + 1) / ((double)permutations + 1) - integral;
     }
     // End statmod::permp
+    std::cout << pvalue << std::endl;
 }
