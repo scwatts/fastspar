@@ -278,7 +278,7 @@ void writeOutMatrix(arma::Mat<double>& matrix, std::string out_filename, struct 
             if (j == 0) {
                 outfile << otu_table.sample_names[i];
             }
-            outfile << "\t" << std::fixed << std::setprecision(4) << matrix(i, j);
+            outfile << "\t" << std::fixed << std::setprecision(5) << matrix(i, j);
         }
         outfile << std::endl;
     }
