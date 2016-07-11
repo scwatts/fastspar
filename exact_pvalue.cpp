@@ -151,12 +151,45 @@ void countValuesMoreExtreme(arma::Mat<double>& abs_observed_correlation,
 }
 
 
-int factorial(int number) {
+double factorial(double number) {
     if (number == 1  || number == 0) {
         return 1;
     } else {
         return number * factorial(number - 1);
     }
+}
+
+
+double calculatePossiblePermutationsForOTU(std::unordered_map<int, int>& count_frequency, struct OtuTable& otu_table) {
+    int max = 0;
+    double numerator = 1;
+    double denominator = 1;
+    // The total permutations for a single OTU can be calculated by factorial division. We try to
+    // simplify it here (credit to Scott Richie for method)
+    for (std::unordered_map<int, int>::iterator it = count_frequency.begin(); it != count_frequency.end(); ++it) {
+        // Factorial of 1 is 1
+        if (it->second == 1){
+            continue;
+        }
+        // This part simplifies factorial division - we cancel largest/remove denominator
+        if (it->second > max) {
+            // If previous max was greater than 0, multiply denominator by factorial(max)
+            if (max > 0){
+                denominator *= factorial(max);
+            }
+            // Assigned new max
+            max = it->second;
+        } else {
+                denominator *= factorial(it->second);
+        }
+    }
+    // Calculate the simpilfied numerator
+    for (int i = otu_table.sample_number; i > max; --i) {
+        numerator *= i;
+    }
+    // Finally calculate possible permutations for the OTU
+    // TODO: This method can produce Inf, is this okay?
+    return numerator / denominator;
 }
 
 
@@ -341,40 +374,16 @@ int main(int argc, char **argv) {
     }
 
     // Calculate total possible permutations for each OTU
-    // First we need to get the frequency of each count for an OTU across all samples
-    std::unordered_map<int, int> count_frequency;
-    double numerator = 1;
-    double denominator = 1;
-    double possible_permutations;
-    int max;
-    for (arma::Mat<int>::col_iterator it = counts.begin_col(0); it != counts.end_col(0); ++it) {
-        ++count_frequency[*it];
-    }
-    // The total permutations for a single OTU can be calculated by factorial division. We try to
-    // simplify it here (credit to Scott Richie for method)
-    for (std::unordered_map<int, int>::iterator it = count_frequency.begin(); it != count_frequency.end(); ++it) {
-        // Factorial of 1 is 1
-        if (it->second == 1){
-            continue;
+    arma::Col<double> possible_permutations(otu_table.otu_number);
+    for (int i = 0; i < otu_table.otu_number; ++i) {
+        // First we need to get the frequency of each count for an OTU across all samples
+        std::unordered_map<int, int> count_frequency;
+        for (arma::Mat<int>::col_iterator it = counts.begin_col(i); it != counts.end_col(i); ++it) {
+            ++count_frequency[*it];
         }
-        // This part simplifies factorial division - we cancel largest/remove denominator
-        if (it->second > max) {
-            // If previous max was greater than 0, multiply denominator by factorial(max)
-            if (max > 0){
-                denominator *= factorial(max);
-            }
-            // Assigned new max
-            max = it->second;
-        } else {
-                denominator *= factorial(it->second);
-        }
+        // Call function to calculate possible permutations and store
+        possible_permutations(i) = calculatePossiblePermutationsForOTU(count_frequency, otu_table);
     }
-    // Calculate the simpilfied numerator
-    for (int i = otu_table.sample_number; i > max; --i) {
-        numerator *= i;
-    }
-    possible_permutations = numerator / denominator;
-
 
     // TODO: Calculate possible permutations for each OTU. Then we need the product of possible
     // permutations for each OTU pair for p-value calculation
