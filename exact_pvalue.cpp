@@ -385,69 +385,71 @@ int main(int argc, char **argv) {
         possible_permutations(i) = calculatePossiblePermutationsForOTU(count_frequency, otu_table);
     }
 
-    // TODO: Calculate possible permutations for each OTU. Then we need the product of possible
-    // permutations for each OTU pair for p-value calculation
 
-    // TEMP
-    int more_extreme_count = 2;
-    double pvalue;
+    // Calculate p-values; loop through each i, j element in the extreme counts matrix
+    arma::Mat<double> pvalues(otu_table.otu_number, otu_table.otu_number, arma::fill::zeros);
+    for (int i = 0; i < otu_table.otu_number; ++i) {
+        for (int j = 0; j < otu_table.otu_number; ++j) {
+            // Get the total possible permutations between the OTU pair
+            // TODO: Check if this is producing desired results
+            double otu_pair_possible_permutations = possible_permutations(i) * possible_permutations(j);
+            // Start statmod::permp port
+            if (otu_pair_possible_permutations <= 10000 ) {
+                // Exact p-value calculation
+                double prob[(int)otu_pair_possible_permutations];
+                double prob_binom_sum = 0;
+                for (int i = 0; i < otu_pair_possible_permutations; ++i) {
+                    prob[i] = (double)(i + 1) / otu_pair_possible_permutations;
+                }
+                for (int i = 0; i < otu_pair_possible_permutations; ++i) {
+                    prob_binom_sum += gsl_cdf_binomial_P(extreme_value_counts(i, j), prob[i], permutations);
+                }
+                pvalues(i, j) = prob_binom_sum / otu_pair_possible_permutations;
+            } else {
+                // Integral approximation for p-value calculation
+                // Start statmod::gaussquad port
+                // TODO: See if there is a better way to init array elements w/o hard coding
+                int n = 128;
+                double a[n];
+                double b[n];
+                double z[n];
+                int ierr = 0;
 
-    // Start statmod::permp
-    if (possible_permutations <= 10000 ) {
-        // Exact p-value calculation
-        double prob[(int)possible_permutations];
-        double prob_binom_sum;
-        for (int i = 0; i < possible_permutations; ++i) {
-            prob[i] = (double)(i + 1) / possible_permutations;
-        }
-        for (int i = 0; i < possible_permutations; ++i) {
-            prob_binom_sum += gsl_cdf_binomial_P(more_extreme_count, prob[i], permutations);
-        }
-        pvalue = prob_binom_sum / possible_permutations;
-    } else {
-        // Integral approximation for p-value calculation
-        // Start statmod::gaussquad
-        // TODO: See if there is a better way to init array elements w/o hard coding
-        int n = 128;
-        double a[n];
-        double b[n];
-        double z[n];
-        int ierr = 0;
+                // Initialise array elements
+                for (int i = 0; i < n; ++i) {
+                    a[i] = 0;
+                    z[i] = 0;
+                }
+                for (int i = 0; i < (n - 1); ++i){
+                    int i1 = i + 1;
+                    b[i] = i1 / sqrt(4 * pow(i1, 2) - 1);
+                }
+                b[n] = 0;
+                z[0] = 1;
 
-        // Initialise array elements
-        for (int i = 0; i < n; ++i) {
-            a[i] = 0;
-            z[i] = 0;
-        }
-        for (int i = 0; i < (n - 1); ++i){
-            int i1 = i + 1;
-            b[i] = i1 / sqrt(4 * pow(i1, 2) - 1);
-        }
-        b[n] = 0;
-        z[0] = 1;
+                // Make call to Fortran subroutine. Variables a, b, z and ierr are modified
+                c_gausq2(&n, a, b, z, &ierr);
 
-        // Make call to Fortran subroutine. Variables a, b, z and ierr are modified
-        c_gausq2(&n, a, b, z, &ierr);
+                // Further cals
+                double u = 0.5 / otu_pair_possible_permutations;
+                double weights[n];
+                double nodes[n];
+                for (int i = 0; i < n; ++i) {
+                    weights[i] = pow(z[i], 2);
+                }
+                for (int i = 0; i < n; ++i) {
+                    nodes[i] = u * (a[i] + 1) / 2;
+                }
+                // End statmod::gaussquad port
 
-        // Further cals
-        double u = 0.5 / possible_permutations;
-        double weights[n];
-        double nodes[n];
-        for (int i = 0; i < n; ++i) {
-            weights[i] = pow(z[i], 2);
+                double weight_prob_product_sum = 0;
+                for (int i = 0; i < n; ++i) {
+                    weight_prob_product_sum += gsl_cdf_binomial_P(extreme_value_counts(i, j), nodes[i], permutations) * weights[i];
+                }
+                double integral = 0.5 / (otu_pair_possible_permutations * weight_prob_product_sum);
+                pvalues(i, j) = ((double)extreme_value_counts(i, j) + 1) / ((double)permutations + 1) - integral;
+            }
+            // End statmod::permp port
         }
-        for (int i = 0; i < n; ++i) {
-            nodes[i] = u * (a[i] + 1) / 2;
-        }
-        // End statmod::gaussquad
-
-        double weight_prob_product_sum;
-        for (int i = 0; i < n; ++i) {
-            weight_prob_product_sum += gsl_cdf_binomial_P(more_extreme_count, nodes[i], permutations) * weights[i];
-        }
-        double integral = 0.5 / (possible_permutations * weight_prob_product_sum);
-        pvalue = ((double)more_extreme_count + 1) / ((double)permutations + 1) - integral;
     }
-    // End statmod::permp
-    std::cout << pvalue << std::endl;
 }
