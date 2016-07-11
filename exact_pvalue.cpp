@@ -325,14 +325,25 @@ int main(int argc, char **argv) {
 
 
     // TEMP
-    int possible_permutations = 20000;
+    int possible_permutations = 10000;
     int permutations = 5000;
     int more_extreme_count = 2;
 
-    if (possible_permutations < 10000 ) {
-
+    // Start statmod::permp
+    if (possible_permutations <= 10000 ) {
+        // Exact p-value calculation
+        double prob[possible_permutations];
+        double prob_binom_sum;
+        double pvalue;
+        for (int i = 0; i < possible_permutations; ++i) {
+            prob[i] = (double)(i + 1) / possible_permutations;
+        }
+        for (int i = 0; i < possible_permutations; ++i) {
+            prob_binom_sum += gsl_cdf_binomial_P(more_extreme_count, prob[i], permutations);
+        }
+        pvalue = prob_binom_sum / possible_permutations;
     } else {
-        // Integral approximation
+        // Integral approximation for p-value calculation
         // Start statmod::gaussquad
         // TODO: See if there is a better way to init array elements w/o hard coding
         int n = 128;
@@ -367,14 +378,13 @@ int main(int argc, char **argv) {
             nodes[i] = u * (a[i] + 1) / 2;
         }
         // End statmod::gaussquad
-        // Start statmod::permp
 
         double weight_prob_product_sum;
         for (int i = 0; i < n; ++i) {
             weight_prob_product_sum += gsl_cdf_binomial_P(more_extreme_count, nodes[i], permutations) * weights[i];
         }
         double integral = 0.5 / (possible_permutations * weight_prob_product_sum);
-        double pvalue = ((double)more_extreme_count + 1) / ((double)permutations + 1 ) - integral;
-        std::cout << pvalue << std::endl;
+        double pvalue = ((double)more_extreme_count + 1) / ((double)permutations + 1) - integral;
     }
+    // End statmod::permp
 }
