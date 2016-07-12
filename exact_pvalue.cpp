@@ -276,7 +276,7 @@ void writeOutMatrix(arma::Mat<double>& matrix, std::string out_filename, struct 
         for (unsigned int j = 0; j < matrix.n_cols; ++j) {
             // Write the OTU id as first field in row
             if (j == 0) {
-                outfile << otu_table.sample_names[i];
+                outfile << otu_table.otu_ids[i];
             }
             outfile << "\t" << std::fixed << std::setprecision(5) << matrix(i, j);
         }

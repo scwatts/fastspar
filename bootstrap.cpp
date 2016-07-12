@@ -83,7 +83,7 @@ void writeOutMatrix(arma::Mat<int>& matrix, std::string out_filename, struct Otu
     outfile.open(out_filename);
     // Write out header
     outfile << "#OTU ID";
-    for (std::vector<std::string>::iterator it = otu_table.otu_ids.begin(); it != otu_table.otu_ids.end(); ++it) {
+    for (std::vector<std::string>::iterator it = otu_table.sample_names.begin(); it != otu_table.sample_names.end(); ++it) {
         outfile << "\t" << *it;
     }
     outfile << std::endl;
@@ -92,7 +92,7 @@ void writeOutMatrix(arma::Mat<int>& matrix, std::string out_filename, struct Otu
         for (unsigned int j = 0; j < matrix.n_cols; ++j) {
             // Write the OTU id as first field in row
             if (j == 0) {
-                outfile << otu_table.sample_names[i];
+                outfile << otu_table.otu_ids[i];
             }
             outfile << "\t" << matrix(i, j);
         }
