@@ -134,8 +134,7 @@ arma::Mat<double> calculateLogRatioVariance(const arma::Mat<double>& fractions) 
 
 struct VarianceResults calculateComponentVariance(arma::Mat<double> variance,
                                                   arma::Mat<double>& mod,
-                                                  std::vector<arma::uword>& excluded,
-                                                  const struct OtuTable& otu_table) {
+                                                  std::vector<arma::uword>& excluded) {
     // NOTE: The variance matrix is passed as value so that we can modify it only in this scope
     struct VarianceResults variance_results;
     // If any pairs have been excluded, set variance to zero
@@ -477,7 +476,7 @@ int main(int argc, char **argv) {
         arma::Mat<double> mod = arma::diagmat((arma::Col<double>) mod_diag);
         mod = mod + 1;
         // And now calculate
-        struct VarianceResults variance_results = calculateComponentVariance(variance, mod, excluded, otu_table);
+        struct VarianceResults variance_results = calculateComponentVariance(variance, mod, excluded);
 
         // STEP 3: Calculate correlation and covariance from basis variation and estimated fractions
         struct BasisResults basis_results = calculateCorAndCov(variance, variance_results.basis_variance, otu_table);
@@ -486,7 +485,7 @@ int main(int argc, char **argv) {
         for (int j = 0; j < exclude_iterations; ++j) {
             findAndAddExcludedPairs(basis_results, variance_results, otu_table, excluded, threshold);
             // Recalculate component variation after pair exclusion
-            variance_results = calculateComponentVariance(variance, variance_results.mod, excluded, otu_table);
+            variance_results = calculateComponentVariance(variance, variance_results.mod, excluded);
             // Recalculate correlation and covariance after pair exclusion
             basis_results = calculateCorAndCov(variance, variance_results.basis_variance, otu_table);
         }
