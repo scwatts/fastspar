@@ -251,8 +251,8 @@ double calculatePvalueWithIntegralEstimate(double& otu_pair_possible_permutation
 
     // Start statmod::permp port
     double weight_prob_product_sum = 0;
-    for (int i = 0; i < n; ++i) {
-        weight_prob_product_sum += gsl_cdf_binomial_P(extreme_value_counts(i, j), nodes[i], permutations) * weights[i];
+    for (int k = 0; k < n; ++k) {
+        weight_prob_product_sum += gsl_cdf_binomial_P(extreme_value_counts(i, j), nodes[k], permutations) * weights[i];
     }
     double integral = 0.5 / (otu_pair_possible_permutations * weight_prob_product_sum);
     // TODO: Check if the double cast correctly done (it is required but maybe adding 1.0 instead of 1 is sufficient)
