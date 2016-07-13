@@ -39,9 +39,8 @@ struct OtuTable loadOtuFile(std::string filename) {
     // Iterate header columns
     while(std::getline(line_stream, ele, '\t')) {
         //TODO: Add assertion here
-        // Skip the OTU_id column (first column). This really should only be #OTU ID but
-        // SparCC included simulated data with OTU_id instead...
-        if (ele == "OTU_id" || ele == "#OTU ID") {
+        // Skip the #OTU ID column (first column)
+        if (ele == "#OTU ID") {
             continue;
         }
         // Store samples
@@ -58,7 +57,7 @@ struct OtuTable loadOtuFile(std::string filename) {
         // Add current line to line stream and then split by tabs
         line_stream.str(line);
         while (std::getline(line_stream, ele, '\t')) {
-            // Grab the OTU_id
+            // Grab the #OTU ID
             if (id) {
                 otu_table.otu_ids.push_back(ele);
                 id = false;
