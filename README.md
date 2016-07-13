@@ -3,27 +3,39 @@ A c++ implementation of the SparCC algorithm published here: Friedman, J. & Alm,
 
 Much of the implmentation was ported from original SparCC implmentation found here: https://bitbucket.org/yonatanf/sparcc
 
+Additionally, SparCC's method of p-value has been replaced with exact p-value calculation. This code was adopted from the permp function from the statmod R package. The advantages of this alternative method are discussed here: Phipson, B. & Smyth, G. K. Permutation p-values should never be zero: calculating exact p-values when permutations are randomly drawn Stat Appl Genet Mol Biol. 9: Article 39 (2010).
+
+
 ## Installing
-SparCpp has been written using c++ with Armadillo, GNU Scientific Library (GSL), and getopt. Compilation will require these libraries.
+SparCpp has been written using c++ with Armadillo, GNU Scientific Library (GSL), and getopt. Compilation will require these libraries. Further, the exact p-value executable requires compilation of FORTRAN code.
 
 
 ### Prerequisities
 For compilation the following is required:
 ```
 C++11
+Gfortran
 Armadillo 6.7+
 GNU Scientific Library 2.1+
 GNU getopt
+GNU make
 ```
+
 
 ### Installing
-Compile SparCpp, using O2 optimisation and linking against Armadillo and GSL:
+To compile SparCpp executables, clone this repository and run GNU make:
+
 ```bash
-g++ -Wall -O2 -std=c++11 -larmadillo -lgsl -lgslcblas -lm -o sparcpp sparcpp.cpp
+git clone https://github.com/scwatts/sparcpp.git
+cd sparcpp && make
+
 ```
+Once compiled, the SparCpp executables will be located in src/
+
 
 ## Usage
-To run SparCpp, you must have a BIOM tsv format file (with no metadata). The `fake_data.txt` (from the original SparCC implementation) will be used as an example:
+### Correlation inference
+To run SparCpp, you must have a OTU absolute counts in BIOM tsv format file (with no metadata). The `fake_data.txt` (from the original SparCC implementation) will be used as an example:
 
 ```bash
 ./sparcpp --otu_table fake_data.txt --correlation median_correlation.tsv --covariance median_covariance.tsv
@@ -39,6 +51,31 @@ Further, the minimum threshold to exclude correlated OTU pairs can be increased:
 ```bash
 ./sparcpp --threshold 0.2 --otu_table fake_data.txt --correlation median_correlation.tsv --covariance median_covariance.tsv
 ```
+
+
+### Calculation of exact p-values
+To calculate the p-value of the infered correlations, bootstraping can be performed. This process involves infering correlation from random permutations of the original OTU count data. The p-values are then calculated from the bootstrap correlations. In the below example, we calculate p-values from 1000 bootstrap correlations.
+
+
+First we generate the 1000 boostrap counts:
+
+```bash
+mkdir bootstrap_counts
+./bootstrap --otu_table fake_data.txt --number 1000 --prefix bootstrap_counts/fake_data
+```
+
+And then infer correlations for each bootstrap count (running in parallel with all processes available):
+
+```bash
+mkdir bootstrap_correlation
+parallel ./sparcpp --otu_table {} --correlation bootstrap_correlation/cor_{/} --covariance bootstrap_correlation/cov_{/} -i 5 ::: bootstrap_counts/*
+```
+
+From these correlations, the p-values are then calculated:
+```bash
+./exact_pvalues --otu_table fake_data.txt --correlation median_correlation.tsv --prefix bootstrap_correlation/cor_fake_data_ --permutations 1000 --outfile pvalues.tsv
+```
+
 
 ## License
 This project is licensed under the GNU GPLv3 Licence
