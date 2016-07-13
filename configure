@@ -2543,6 +2543,7 @@ END
   fi
 fi
 
+# Check for c++ and fortran compilers
 ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -3452,8 +3453,7 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-LIBS="-larmadillo -lgsl -lgslcblas -lm"
-# On helix, we need to link against mpi libraries else building fails
+# Check libraries are installed
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -4181,6 +4181,169 @@ fi
 
 
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -larmadillo" >&5
+$as_echo_n "checking for main in -larmadillo... " >&6; }
+if ${ac_cv_lib_armadillo_main+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-larmadillo  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+return main ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_armadillo_main=yes
+else
+  ac_cv_lib_armadillo_main=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_armadillo_main" >&5
+$as_echo "$ac_cv_lib_armadillo_main" >&6; }
+if test "x$ac_cv_lib_armadillo_main" = xyes; then :
+  LIBS="$LIBS -larmadillo"
+else
+  as_fn_error $? "could not find the library Armadillo" "$LINENO" 5
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for cos in -lm" >&5
+$as_echo_n "checking for cos in -lm... " >&6; }
+if ${ac_cv_lib_m_cos+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lm  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char cos ();
+int
+main ()
+{
+return cos ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_m_cos=yes
+else
+  ac_cv_lib_m_cos=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_m_cos" >&5
+$as_echo "$ac_cv_lib_m_cos" >&6; }
+if test "x$ac_cv_lib_m_cos" = xyes; then :
+  LIBS="$LIBS -lm"
+else
+  as_fn_error $? "could not find the library LibM" "$LINENO" 5
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for cblas_dgemm in -lgslcblas" >&5
+$as_echo_n "checking for cblas_dgemm in -lgslcblas... " >&6; }
+if ${ac_cv_lib_gslcblas_cblas_dgemm+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lgslcblas  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char cblas_dgemm ();
+int
+main ()
+{
+return cblas_dgemm ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_gslcblas_cblas_dgemm=yes
+else
+  ac_cv_lib_gslcblas_cblas_dgemm=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_gslcblas_cblas_dgemm" >&5
+$as_echo "$ac_cv_lib_gslcblas_cblas_dgemm" >&6; }
+if test "x$ac_cv_lib_gslcblas_cblas_dgemm" = xyes; then :
+  LIBS="$LIBS -lgslcblas"
+else
+  as_fn_error $? "could not find the library GSL (gslcblas)" "$LINENO" 5
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for gsl_ran_dirichlet in -lgsl" >&5
+$as_echo_n "checking for gsl_ran_dirichlet in -lgsl... " >&6; }
+if ${ac_cv_lib_gsl_gsl_ran_dirichlet+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lgsl  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char gsl_ran_dirichlet ();
+int
+main ()
+{
+return gsl_ran_dirichlet ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_gsl_gsl_ran_dirichlet=yes
+else
+  ac_cv_lib_gsl_gsl_ran_dirichlet=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_gsl_gsl_ran_dirichlet" >&5
+$as_echo "$ac_cv_lib_gsl_gsl_ran_dirichlet" >&6; }
+if test "x$ac_cv_lib_gsl_gsl_ran_dirichlet" = xyes; then :
+  LIBS="$LIBS -lgsl"
+else
+  as_fn_error $? "could not find the library GSL" "$LINENO" 5
+fi
+
+# On helix, we need to link against mpi libraries else building fails
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for MPI_Init in -lmpi" >&5
 $as_echo_n "checking for MPI_Init in -lmpi... " >&6; }
 if ${ac_cv_lib_mpi_MPI_Init+:} false; then :
@@ -4261,8 +4424,10 @@ if test "x$ac_cv_lib_mpi_cxx_MPI_Init" = xyes; then :
   LIBS="$LIBS -lmpi_cxx"
 fi
 
+# Set config header output
 ac_config_headers="$ac_config_headers config.h"
 
+# Decalre Makefile outputs
 ac_config_files="$ac_config_files Makefile src/Makefile"
 
 cat >confcache <<\_ACEOF
