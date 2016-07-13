@@ -4,7 +4,7 @@ FFLAGS=-Wall -O2
 
 # C++ compiler and flags
 CXX=g++
-CFLAGS=-std=c++11 -Wall -O2
+CXXFLAGS=-std=c++11 -Wall -O2
 
 # Common shared libraries
 LDLIBS=-larmadillo -lgsl -lgslcblas -lm
@@ -28,7 +28,7 @@ exact_pvalues: exact_pvalue.o gaussq.o
 	$(FC) $(LDLIBS) -lstdc++ $? -o $@
 
 .cpp.o:
-	$(CXX) -c $(CFLAGS) $< -o $@
+	$(CXX) -c $(CXXFLAGS) $< -o $@
 
 .f.o:
 	$(FC) -c $(FFLAGS) $< -o $@
