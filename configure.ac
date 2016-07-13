@@ -2,8 +2,14 @@ AC_INIT([sparcpp], [0.1], [step.wat@gmail.com])
 AM_INIT_AUTOMAKE([foreign -Wall -Werror])
 # Check for c++ and fortran compilers
 AC_PROG_CXX
-AC_PROG_F77([gfortran])
+AC_PROG_F77
 # Check libraries are installed
+# Manually check for HDF5 wrappers in PATH
+AC_PATH_PROGS([HDF5], [h5c++ h5cc h5fc h5pcc], ["no"])
+if test "$HDF5" = "no"; then
+        AC_MSG_ERROR(could not find the library HDF5)
+fi
+# Use built-in macros to check for other libraries
 AC_CHECK_LIB(armadillo, main, [LIBS="$LIBS -larmadillo"], AC_MSG_ERROR(could not find the library Armadillo))
 AC_CHECK_LIB(m, cos, [LIBS="$LIBS -lm"], AC_MSG_ERROR(could not find the library LibM))
 AC_CHECK_LIB(gslcblas, cblas_dgemm, [LIBS="$LIBS -lgslcblas"], AC_MSG_ERROR(could not find the library GSL (gslcblas)))
