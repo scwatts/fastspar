@@ -27,7 +27,10 @@ To compile SparCpp executables, clone this repository and run GNU make:
 
 ```bash
 git clone https://github.com/scwatts/sparcpp.git
-cd sparcpp && make
+cd sparcpp
+./configure --prefix=$HOME/.local/
+make
+make install
 
 ```
 Once compiled, the SparCpp executables will be located in src/
