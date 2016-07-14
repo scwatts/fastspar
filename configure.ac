@@ -21,4 +21,6 @@ AC_CHECK_LIB(mpi_cxx, MPI_Init, [LIBS="$LIBS -lmpi_cxx"])
 AC_CONFIG_HEADERS([config.h])
 # Decalre Makefile outputs
 AC_CONFIG_FILES([Makefile src/Makefile])
+# Disables rebuild rules (fix issue when cloning github repo and Makefile.am, configure.ac, and aclocal.m4 have borked datastamps)
+AM_MAINTAINER_MODE([disable])
 AC_OUTPUT
