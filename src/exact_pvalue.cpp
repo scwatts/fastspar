@@ -193,8 +193,7 @@ double calculatePossiblePermutationsForOTU(std::unordered_map<int, int>& count_f
 }
 
 
-double calculateExactPvalue(double otu_pair_possible_permutations, arma::Mat<int>& extreme_value_counts,
-                                int& permutations, int& i, int& j) {
+double calculateExactPvalue(double otu_pair_possible_permutations, int& extreme_value_count, int& permutations) {
     // Function adapted and ported from statmod::permp
     // This cast is messy (also can't pass otu_pair as double reference for some reason)
     double prob[(int)otu_pair_possible_permutations];
@@ -203,15 +202,14 @@ double calculateExactPvalue(double otu_pair_possible_permutations, arma::Mat<int
         prob[i] = (double)(i + 1) / otu_pair_possible_permutations;
     }
     for (int i = 0; i < otu_pair_possible_permutations; ++i) {
-        prob_binom_sum += gsl_cdf_binomial_P(extreme_value_counts(i, j), prob[i], permutations);
+        prob_binom_sum += gsl_cdf_binomial_P(extreme_value_count, prob[i], permutations);
     }
     // Return p-value
     return prob_binom_sum / otu_pair_possible_permutations;
 }
 
 
-double calculatePvalueWithIntegralEstimate(double& otu_pair_possible_permutations, arma::Mat<int>& extreme_value_counts,
-                                            int& permutations, int& i, int& j) {
+double calculatePvalueWithIntegralEstimate(double& otu_pair_possible_permutations, int& extreme_value_count, int& permutations) {
     // Function adapted and ported from statmod::permp and statmod::gaussquad
     // TODO: See if there is a better way to init array elements w/o hard coding
     // Start statmod::gaussquad port
@@ -251,13 +249,13 @@ double calculatePvalueWithIntegralEstimate(double& otu_pair_possible_permutation
 
     // Start statmod::permp port
     double weight_prob_product_sum = 0;
-    for (int k = 0; k < n; ++k) {
-        weight_prob_product_sum += gsl_cdf_binomial_P(extreme_value_counts(i, j), nodes[k], permutations) * weights[i];
+    for (int i = 0; i < n; ++i) {
+        weight_prob_product_sum += gsl_cdf_binomial_P(extreme_value_count, nodes[i], permutations) * weights[i];
     }
     double integral = 0.5 / (otu_pair_possible_permutations * weight_prob_product_sum);
     // TODO: Check if the double cast correctly done (it is required but maybe adding 1.0 instead of 1 is sufficient)
     // End statmod::permp port with p-value return
-    return ((double)extreme_value_counts(i, j) + 1) / ((double)permutations + 1) - integral;
+    return ((double)extreme_value_count + 1) / ((double)permutations + 1) - integral;
 }
 
 
@@ -454,7 +452,7 @@ int main(int argc, char **argv) {
     }
 
     // Calculate total possible permutations for each OTU
-    arma::Col<double> possible_permutations(otu_table.otu_number);
+    arma::Col<double> possible_permutations(otu_table.otu_number, arma::fill::zeros);
     for (int i = 0; i < otu_table.otu_number; ++i) {
         // First we need to get the frequency of each count for an OTU across all samples
         std::unordered_map<int, int> count_frequency;
@@ -477,10 +475,10 @@ int main(int argc, char **argv) {
             if (otu_pair_possible_permutations <= 10000 ) {
                 // Exact p-value calculation
                 // If fewer than 10000 possible permutations, we can safely cast double to int
-                pvalues(i, j) = calculateExactPvalue((int)otu_pair_possible_permutations, extreme_value_counts, permutations, i, j);
+                pvalues(i, j) = calculateExactPvalue((int)otu_pair_possible_permutations, extreme_value_counts(i, j), permutations);
             } else {
                 // Integral approximation for p-value calculation
-                pvalues(i, j) = calculatePvalueWithIntegralEstimate(otu_pair_possible_permutations, extreme_value_counts, permutations, i, j);
+                pvalues(i, j) = calculatePvalueWithIntegralEstimate(otu_pair_possible_permutations, extreme_value_counts(i, j), permutations);
             }
         }
     }
