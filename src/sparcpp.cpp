@@ -492,6 +492,7 @@ int main(int argc, char **argv) {
         if (arma::abs(basis_results.basis_correlation).max() > 1.0){
             std::string error_str = "Input triggered condition to perform clr correlation, this is not yet implemented";
             std::cerr << error_str << std::endl;
+	    exit(0);
         }
 
         // Finally add the calculated correlation and covariances to a running vector
