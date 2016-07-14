@@ -174,10 +174,7 @@ struct BasisResults calculateCorAndCov(const arma::Mat<double>& variance, const 
                     basis_cor_el = 1;
                 }
                 // Recalculate correlation after setting cor
-                //double basis_cov_el = basis_cor_el * sqrt(basis_variance(i)) * sqrt(basis_variance(j));
-                // NOTE: I don't think this ever happens, placing an exit here instead
-                std::cerr << "abs(basis_cor_el) is greater and SparCC requires recalculation, uncomment in code\n";
-                exit(1);
+                double basis_cov_el = basis_cor_el * sqrt(basis_variance(i)) * sqrt(basis_variance(j));
             }
             // TODO: Check if we can avoid repetition here as well
             // Set basis_correlation and basis_covariance matrices
