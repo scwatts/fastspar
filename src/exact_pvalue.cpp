@@ -20,7 +20,7 @@ extern "C" {
 struct OtuTable {
     std::vector<std::string> sample_names;
     std::vector<std::string> otu_ids;
-    std::vector<int> otu_observations;
+    std::vector<double> otu_observations;
     int otu_number;
     int sample_number;
 };
@@ -69,8 +69,8 @@ struct OtuTable loadOtuFile(std::string filename) {
                 id = false;
                 continue;
             }
-            // Add current element to OTU count after converting to int
-            otu_table.otu_observations.push_back(std::stoi(ele));
+            // Add current element to OTU count after converting to double
+            otu_table.otu_observations.push_back(std::stod(ele));
         }
         ++otu_number;
     // TODO: Check if growing std::vector is sustainable for large tables
@@ -160,13 +160,13 @@ double factorial(double number) {
 }
 
 
-double calculatePossiblePermutationsForOTU(std::unordered_map<int, int>& count_frequency, struct OtuTable& otu_table) {
+double calculatePossiblePermutationsForOTU(std::unordered_map<double, int>& count_frequency, struct OtuTable& otu_table) {
     // The total permutations for a single OTU can be calculated by factorial division. We try to
     // simplify it here (ported from R code authored by Scott Ritchie)
     int max = 0;
     double numerator = 1;
     double denominator = 1;
-    for (std::unordered_map<int, int>::iterator it = count_frequency.begin(); it != count_frequency.end(); ++it) {
+    for (std::unordered_map<double, int>::iterator it = count_frequency.begin(); it != count_frequency.end(); ++it) {
         // Factorial of 1 is 1
         if (it->second == 1){
             continue;
@@ -435,7 +435,7 @@ int main(int argc, char **argv) {
 
     // Read in otu tables (used to calculate total possible permutations)
     struct OtuTable otu_table = loadOtuFile(otu_filename);
-    arma::Mat<int> counts(otu_table.otu_observations);
+    arma::Mat<double> counts(otu_table.otu_observations);
     counts.reshape(otu_table.sample_number, otu_table.otu_number);
 
     // Read in observed correlation
@@ -455,8 +455,10 @@ int main(int argc, char **argv) {
     arma::Col<double> possible_permutations(otu_table.otu_number, arma::fill::zeros);
     for (int i = 0; i < otu_table.otu_number; ++i) {
         // First we need to get the frequency of each count for an OTU across all samples
-        std::unordered_map<int, int> count_frequency;
-        for (arma::Mat<int>::col_iterator it = counts.begin_col(i); it != counts.end_col(i); ++it) {
+	// TODO: Check that after changing from int counts to double (for corrected OTU counts) that these isn't borked
+	// Main concern that equality will not be true in some cases where they would be otherwise due to float error
+        std::unordered_map<double, int> count_frequency;
+        for (arma::Mat<double>::col_iterator it = counts.begin_col(i); it != counts.end_col(i); ++it) {
             ++count_frequency[*it];
         }
         // Call function to calculate possible permutations and store

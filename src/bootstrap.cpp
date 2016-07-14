@@ -13,7 +13,7 @@
 struct OtuTable {
     std::vector<std::string> sample_names;
     std::vector<std::string> otu_ids;
-    std::vector<int> otu_observations;
+    std::vector<double> otu_observations;
     int otu_number;
     int sample_number;
 };
@@ -63,8 +63,8 @@ struct OtuTable loadOtuFile(std::string filename) {
                 id = false;
                 continue;
             }
-            // Add current element to OTU count after converting to int
-            otu_table.otu_observations.push_back(std::stoi(ele));
+            // Add current element to OTU count after converting to double
+            otu_table.otu_observations.push_back(std::stod(ele));
         }
         ++otu_number;
     // TODO: Check if growing std::vector is sustainable for large tables
@@ -76,7 +76,7 @@ struct OtuTable loadOtuFile(std::string filename) {
 }
 
 
-void writeOutMatrix(arma::Mat<int>& matrix, std::string out_filename, struct OtuTable& otu_table) {
+void writeOutMatrix(arma::Mat<double>& matrix, std::string out_filename, struct OtuTable& otu_table) {
     // Get stream handle
     std::ofstream outfile;
     outfile.open(out_filename);
@@ -223,13 +223,13 @@ int main(int argc, char **argv) {
     // Load the OTU table from file
     struct OtuTable otu_table = loadOtuFile(otu_filename);
     // Construct count matrix
-    arma::Mat<int> counts(otu_table.otu_observations);
+    arma::Mat<double> counts(otu_table.otu_observations);
     counts.reshape(otu_table.sample_number, otu_table.otu_number);
 
     // Get specified number of bootstrap samples
     for (int i = 0; i < bootstrap_number; ++i) {
         // For each row in the matrix, random select elements (with replacement)
-        arma::Mat<int> bootstrap(otu_table.sample_number, otu_table.otu_number);
+        arma::Mat<double> bootstrap(otu_table.sample_number, otu_table.otu_number);
         std::string bootstrap_filename = bootstrap_prefix + "_"  + std::to_string(i) + ".tsv";
         for (int j = 0; j < otu_table.otu_number; ++j) {
             // Get a random list of sample indices equal to the number of samples

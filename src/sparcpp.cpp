@@ -13,7 +13,7 @@
 struct OtuTable {
     std::vector<std::string> sample_names;
     std::vector<std::string> otu_ids;
-    std::vector<int> otu_observations;
+    std::vector<double> otu_observations;
     int otu_number;
     int sample_number;
 };
@@ -81,8 +81,8 @@ struct OtuTable loadOtuFile(std::string filename) {
                 id = false;
                 continue;
             }
-            // Add current element to OTU count after converting to int
-            otu_table.otu_observations.push_back(std::stoi(ele));
+            // Add current element to OTU count after converting to double; some OTUs may be corrected and therefore a double
+            otu_table.otu_observations.push_back(std::stod(ele));
         }
         ++otu_number;
     // TODO: Check if growing std::vector is sustainable for large tables
@@ -94,14 +94,14 @@ struct OtuTable loadOtuFile(std::string filename) {
 }
 
 
-arma::Mat<double> estimateComponentFractions(const struct OtuTable& otu_table, arma::Mat<int>& counts, gsl_rng * p_rng) {
+arma::Mat<double> estimateComponentFractions(const struct OtuTable& otu_table, arma::Mat<double>& counts, gsl_rng * p_rng) {
     // TODO: check if it's more efficient to gather fractions and then init arma::Mat (instead of init elements)
     // Estimate fractions by drawing from dirichlet distribution
     arma::Mat<double> fractions(otu_table.sample_number, otu_table.otu_number);
     fractions.fill(1/otu_table.otu_number);
     for(int i = 0; i < otu_table.sample_number; ++i) {
         // Get arma row and add pseudo count (then convert to double vector for rng function)
-        arma::Row<int> row_pseudocount = counts.row(i) + 1;
+        arma::Row<double> row_pseudocount = counts.row(i) + 1;
         std::vector<double> row_pseudocount_vector = arma::conv_to<std::vector<double>>::from(row_pseudocount);
         // Draw from dirichlet dist, storing results in theta double array
         size_t row_size = row_pseudocount_vector.size();
@@ -459,7 +459,7 @@ int main(int argc, char **argv) {
 
     // Load the OTU table from file and construct count matrix
     struct OtuTable otu_table = loadOtuFile(otu_filename);
-    arma::Mat<int> counts(otu_table.otu_observations);
+    arma::Mat<double> counts(otu_table.otu_observations);
     counts.reshape(otu_table.sample_number, otu_table.otu_number);
 
     for (int i = 0; i < iterations; ++i) {
