@@ -126,12 +126,13 @@ void printHelp() {
     std::cerr << "Contact: Stephen Watts (s.watts2@student.unimelb.edu.au)" << std::endl;
     std::cerr << std::endl;
     std::cerr << "Usage:" << std::endl;
-    std::cerr << "  reduce --correlation_table <cf> --pvalue_table <pf> --correlation <rt> --pvalue <pt>" << std::endl;
+    std::cerr << "  reduce --correlation_table <cf> --pvalue_table <pf> --correlation <rt> --pvalue <pt> --output_prefix <op>" << std::endl;
     std::cerr << std::endl;
     std::cerr << "  -c/--correlation_table <cf>       OTU input table" << std::endl;
     std::cerr << "  -p/--pvalue_table <pf>            Number of bootstrap samples to generate" << std::endl;
     std::cerr << "  -r/--correlation <rt>             Absolute (sign is ignored) correlation threshold (default: 0.1)" << std::endl;
     std::cerr << "  -v/--pvalue <pt>                  P-value threshold (default: 0.05)" << std::endl;
+    std::cerr << "  -o/--output_prefix <op>           Output prefix" << std::endl;
 
 }
 
@@ -142,6 +143,7 @@ int main(int argc, char **argv) {
     float pvalue_threshold = 0.05;
     std::string correlation_filename;
     std::string pvalue_filename;
+    std::string output_prefix;
 
     // Commandline arguments (for getlongtops)
     struct option long_options[] =
@@ -150,15 +152,17 @@ int main(int argc, char **argv) {
             {"pvalue_table", required_argument, NULL, 'p'},
             {"correlation", required_argument, NULL, 'r'},
             {"pvalue", required_argument, NULL, 'v'},
+            {"output_prefix", required_argument, NULL, 'o'},
             {"help", no_argument, NULL, 'h'},
             {NULL, 0, 0, 0}
         };
 
     // Check if have an attemp at arguments, else print help
-    if (argc < 2) {
+    // TODO: Fix this. Will fail to catch if given optional args but not all required...
+    if (argc < 3) {
         printHelp();
         std::cerr << std::endl << argv[0];
-        std::cerr << ": error: options -o/--correlation_table and -p/--pvalue_table are required" << std::endl;
+        std::cerr << ": error: options -c/--correlation_table, -p/--pvalue_table and -o/--output_prefix are required" << std::endl;
         exit(0);
     }
 
@@ -166,7 +170,7 @@ int main(int argc, char **argv) {
     while (1) {
         int option_index = 0;
         int c;
-        c = getopt_long (argc, argv, "hc:p:r:v:", long_options, &option_index);
+        c = getopt_long (argc, argv, "hc:p:r:v:o:", long_options, &option_index);
         if (c == -1) {
             break;
         }
@@ -183,6 +187,9 @@ int main(int argc, char **argv) {
                 break;
             case 'v':
                 pvalue_threshold = getFloatFromChar(optarg);
+                break;
+            case 'o':
+                output_prefix = optarg;
                 break;
             case 'h':
                 printHelp();
@@ -201,13 +208,19 @@ int main(int argc, char **argv) {
     if (correlation_filename.empty()) {
         printHelp();
         std::cerr << std::endl << argv[0];
-        std::cerr << ": error: argument -o/--correlation_table is required" << std::endl;
+        std::cerr << ": error: argument -c/--correlation_table is required" << std::endl;
         exit(1);
     }
     if (pvalue_filename.empty()) {
         printHelp();
         std::cerr << std::endl << argv[0];
         std::cerr << ": error: argument -p/--pvalue_table is required" << std::endl;
+        exit(1);
+    }
+    if (output_prefix.empty()) {
+        printHelp();
+        std::cerr << std::endl << argv[0];
+        std::cerr << ": error: argument -o/--output_prefix is required" << std::endl;
         exit(1);
     }
     // Check that the OTU file exists
@@ -239,6 +252,6 @@ int main(int argc, char **argv) {
     SparseMatrix filtered_pvalue_table = filterMatrix(pvalue_table, filtered_element_indices);
 
     // Write filtered OTU correlates to file
-    writeOutSparseMatrix(filtered_correlation_table, "cor_sparse");
-    writeOutSparseMatrix(filtered_pvalue_table, "pval_sparse");
+    writeOutSparseMatrix(filtered_correlation_table, output_prefix + "_filtered_correlation.tsv");
+    writeOutSparseMatrix(filtered_pvalue_table, output_prefix + "_filtered_pvalue.tsv");
 }
