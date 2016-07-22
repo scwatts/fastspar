@@ -100,17 +100,17 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
-am_sparcpp_OBJECTS = sparcpp.$(OBJEXT)
+am_sparcpp_OBJECTS = sparcpp.$(OBJEXT) common.$(OBJEXT)
 sparcpp_OBJECTS = $(am_sparcpp_OBJECTS)
 sparcpp_LDADD = $(LDADD)
-am_sparcpp_bootstrap_OBJECTS = bootstrap.$(OBJEXT)
+am_sparcpp_bootstrap_OBJECTS = bootstrap.$(OBJEXT) common.$(OBJEXT)
 sparcpp_bootstrap_OBJECTS = $(am_sparcpp_bootstrap_OBJECTS)
 sparcpp_bootstrap_LDADD = $(LDADD)
 am_sparcpp_exactpvalues_OBJECTS = exact_pvalue.$(OBJEXT) \
-	gaussq.$(OBJEXT)
+	gaussq.$(OBJEXT) common.$(OBJEXT)
 sparcpp_exactpvalues_OBJECTS = $(am_sparcpp_exactpvalues_OBJECTS)
 sparcpp_exactpvalues_LDADD = $(LDADD)
-am_sparcpp_reduce_OBJECTS = reduce.$(OBJEXT)
+am_sparcpp_reduce_OBJECTS = reduce.$(OBJEXT) common.$(OBJEXT)
 sparcpp_reduce_OBJECTS = $(am_sparcpp_reduce_OBJECTS)
 sparcpp_reduce_LDADD = $(LDADD)
 AM_V_P = $(am__v_P_@AM_V@)
@@ -294,10 +294,10 @@ top_srcdir = @top_srcdir@
 # Compiler flags
 AM_CXXFLAGS = -std=c++11 -Wall -Wextra
 AM_FFLAGS = -Wall -Wextra
-sparcpp_SOURCES = sparcpp.cpp
-sparcpp_bootstrap_SOURCES = bootstrap.cpp
-sparcpp_exactpvalues_SOURCES = exact_pvalue.cpp gaussq.f
-sparcpp_reduce_SOURCES = reduce.cpp
+sparcpp_SOURCES = sparcpp.cpp common.cpp
+sparcpp_bootstrap_SOURCES = bootstrap.cpp common.cpp
+sparcpp_exactpvalues_SOURCES = exact_pvalue.cpp gaussq.f common.cpp
+sparcpp_reduce_SOURCES = reduce.cpp common.cpp
 all: all-am
 
 .SUFFIXES:
@@ -397,6 +397,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bootstrap.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/common.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exact_pvalue.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/reduce.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sparcpp.Po@am__quote@
