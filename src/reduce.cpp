@@ -7,25 +7,17 @@
 #include <vector>
 
 
-#include "armadillo"
-#include "getopt.h"
+#include <armadillo>
+#include <getopt.h>
 
 
-struct SquareMatrix {
-    arma::Mat<double> elements;
-    std::vector<std::string> otus;
-
-    // Using initaliser lists to enable calling on Mat/vector constructors at the time of struct construction
-    SquareMatrix(std::vector<double> element_vector, std::vector<std::string> otu_vector) : elements(element_vector), otus(otu_vector) {}
-};
+#include "common.h"
+#include "reduce.h"
 
 
-struct SparseMatrix {
-    arma::Col<double> elements;
-    std::vector<std::vector<std::string>> otus;
-};
-
-SquareMatrix loadSquareMatrix(std::string& filename) {
+// TODO: Have this as a method? Also I think there is a good amount of code reuse in
+// common.cpp load correlation mat
+SquareMatrix load_square_matrix(std::string& filename) {
     // Used to store strings from file prior to matrix construction
     int element_count;
     std::string line;
@@ -72,7 +64,7 @@ SquareMatrix loadSquareMatrix(std::string& filename) {
 }
 
 
-SparseMatrix filterMatrix(SquareMatrix table, arma::Col<arma::uword> filtered_element_indices){
+SparseMatrix filter_matrix(SquareMatrix table, arma::Col<arma::uword> filtered_element_indices) {
     // Extract elements which pass filter
     arma::Col<double> filtered_table = table.elements(filtered_element_indices);
 
@@ -93,7 +85,7 @@ SparseMatrix filterMatrix(SquareMatrix table, arma::Col<arma::uword> filtered_el
 }
 
 
-void writeOutSparseMatrix(struct SparseMatrix& matrix, std::string out_filename) {
+void write_sparse_matrix(struct SparseMatrix& matrix, std::string out_filename) {
     // Get stream handle
     std::ofstream outfile;
     outfile.open(out_filename);
@@ -103,20 +95,6 @@ void writeOutSparseMatrix(struct SparseMatrix& matrix, std::string out_filename)
         outfile << matrix.otus[i][0] << '\t' << matrix.otus[i][1] << '\t' << matrix.elements[i] << std::endl;
     }
 
-}
-
-
-float getFloatFromChar(const char* optarg) {
-    // Check at most the first 8 characters are numerical
-    std::string optstring(optarg);
-    std::string string_float = optstring.substr(0, 8);
-    for (std::string::iterator it = string_float.begin(); it != string_float.end(); ++it) {
-        if (!isdigit(*it) && (*it) != '.') {
-            std::cerr << "This doesn't look like a float: " << optarg << std::endl;;
-            exit(1);
-        }
-    }
-    return std::atof(string_float.c_str());
 }
 
 
@@ -183,10 +161,10 @@ int main(int argc, char **argv) {
                 pvalue_filename = optarg;
                 break;
             case 'r':
-                correlation_threshold = getFloatFromChar(optarg);
+                correlation_threshold = get_float_from_char(optarg);
                 break;
             case 'v':
-                pvalue_threshold = getFloatFromChar(optarg);
+                pvalue_threshold = get_float_from_char(optarg);
                 break;
             case 'o':
                 output_prefix = optarg;
@@ -241,17 +219,17 @@ int main(int argc, char **argv) {
     }
 
     // Load correlation and p-value tables
-    SquareMatrix correlation_table = loadSquareMatrix(correlation_filename);
-    SquareMatrix pvalue_table = loadSquareMatrix(pvalue_filename);
+    SquareMatrix correlation_table = load_square_matrix(correlation_filename);
+    SquareMatrix pvalue_table = load_square_matrix(pvalue_filename);
 
     // Find index of elements which both pass specified threshold
     arma::Col<arma::uword> filtered_element_indices = arma::find(arma::abs(correlation_table.elements) >= correlation_threshold &&
                                                           pvalue_table.elements <= pvalue_threshold);
     // Will have a generalised function for this
-    SparseMatrix filtered_correlation_table = filterMatrix(correlation_table, filtered_element_indices);
-    SparseMatrix filtered_pvalue_table = filterMatrix(pvalue_table, filtered_element_indices);
+    SparseMatrix filtered_correlation_table = filter_matrix(correlation_table, filtered_element_indices);
+    SparseMatrix filtered_pvalue_table = filter_matrix(pvalue_table, filtered_element_indices);
 
     // Write filtered OTU correlates to file
-    writeOutSparseMatrix(filtered_correlation_table, output_prefix + "_filtered_correlation.tsv");
-    writeOutSparseMatrix(filtered_pvalue_table, output_prefix + "_filtered_pvalue.tsv");
+    write_sparse_matrix(filtered_correlation_table, output_prefix + "_filtered_correlation.tsv");
+    write_sparse_matrix(filtered_pvalue_table, output_prefix + "_filtered_pvalue.tsv");
 }

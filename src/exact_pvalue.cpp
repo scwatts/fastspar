@@ -6,83 +6,25 @@
 #include <sstream>
 #include <vector>
 
+
 #include <armadillo>
 #include <gsl/gsl_cdf.h>
 #include <getopt.h>
 #include <glob.h>
 
 
+#include "exact_pvalue.h"
+#include "common.h"
+
+
 extern "C" {
+    // TODO: See if we can forward declare in header also
     void c_gausq2(int* n, double* d, double* e, double* z, int* ierr);
 }
 
 
-struct OtuTable {
-    std::vector<std::string> sample_names;
-    std::vector<std::string> otu_ids;
-    std::vector<double> otu_observations;
-    int otu_number;
-    int sample_number;
-};
-
-
-struct OtuTable loadOtuFile(std::string filename) {
-    // Used to store strings from file prior to assignment
-    std::string line;
-    std::string ele;
-    std::stringstream line_stream;
-    // Other variables
-    struct OtuTable otu_table;
-    int otu_number = 0;
-    int sample_number = 0;
-    bool id;
-    // Open file stream
-    std::ifstream otu_file;
-    otu_file.open(filename);
-    // Process header
-    std::getline(otu_file, line);
-    line_stream.str(line);
-    // Iterate header columns
-    while(std::getline(line_stream, ele, '\t')) {
-        //TODO: Add assertion here
-        // Skip the #OTU ID column (first column)
-        if (ele == "#OTU ID") {
-            continue;
-        }
-        // Store samples
-        otu_table.sample_names.push_back(ele);
-        ++sample_number;
-    }
-    // Process sample counts, need to get OTU IDS first
-    while(std::getline(otu_file, line)) {
-        // TODO: Is there an alternate design pattern to loop variables as below
-        // Loop variables
-        // (Re)sets variables for loop
-        id = true;
-        line_stream.clear();
-        // Add current line to line stream and then split by tabs
-        line_stream.str(line);
-        while (std::getline(line_stream, ele, '\t')) {
-            // Grab the #OTU ID
-            if (id) {
-                otu_table.otu_ids.push_back(ele);
-                id = false;
-                continue;
-            }
-            // Add current element to OTU count after converting to double
-            otu_table.otu_observations.push_back(std::stod(ele));
-        }
-        ++otu_number;
-    // TODO: Check if growing std::vector is sustainable for large tables
-    }
-    // Add counts to otu_table struct
-    otu_table.otu_number = otu_number;
-    otu_table.sample_number = sample_number;
-    return otu_table;
-}
-
-
-std::vector<std::string> getBootstrapCorrelationPaths(std::string& glob_path) {
+// Collect bootstrap correlation paths by globbing
+std::vector<std::string> get_bootstrap_correlation_paths(std::string& glob_path) {
     // Perform glob
     glob_t glob_results;
     glob(glob_path.c_str(), GLOB_TILDE, NULL, &glob_results);
@@ -99,48 +41,9 @@ std::vector<std::string> getBootstrapCorrelationPaths(std::string& glob_path) {
 }
 
 
-arma::Mat<double> loadCorrelation(std::string& filename, struct OtuTable& otu_table) {
-    // Used to store strings from file prior to matrix construction
-    std::string line;
-    std::string ele;
-    std::stringstream line_stream;
-    std::vector<double> correlations_vector;
-    correlations_vector.reserve(otu_table.otu_number * otu_table.otu_number);
-    // Other variables
-    bool id;
-    // Open file stream
-    std::ifstream cor_file;
-    cor_file.open(filename);
-    // Skip header, order SHOULD be the same as input OTU table
-    std::getline(cor_file, line);
-    line_stream.str(line);
-    // Process correlation elements
-    while(std::getline(cor_file, line)) {
-        // (Re)sets variables for loop
-        id = true;
-        line_stream.clear();
-        // Add current line to line stream and then split by tabs
-        line_stream.str(line);
-        while (std::getline(line_stream, ele, '\t')) {
-            // Skip the OTU ID column
-            if (id) {
-                id = false;
-                continue;
-            }
-            // Add current element to correlation mat after converting to double
-            correlations_vector.push_back(std::stod(ele));
-        }
-    }
-    // Construct matrix and return it
-    arma::Mat<double> correlations(correlations_vector);
-    correlations.reshape(otu_table.otu_number, otu_table.otu_number);
-    return correlations;
-}
-
-
-void countValuesMoreExtreme(arma::Mat<double>& abs_observed_correlation,
-                            arma::Mat<double>& abs_bootstrap_correlation,
-                            arma::Mat<int>& extreme_value_counts) {
+void count_values_more_extreme(arma::Mat<double>& abs_observed_correlation,
+                               arma::Mat<double>& abs_bootstrap_correlation,
+                               arma::Mat<int>& extreme_value_counts) {
     // Find values more extreme than observed in bootstrap for each i,j element
     arma::Col<arma::uword> extreme_value_index = arma::find(abs_bootstrap_correlation >= abs_observed_correlation);
     // For each more extreme value, increment count in extreme_value_counts
@@ -160,7 +63,7 @@ double factorial(double number) {
 }
 
 
-double calculatePossiblePermutationsForOTU(std::unordered_map<double, int>& count_frequency, struct OtuTable& otu_table) {
+double calculate_possbile_otu_permutations(std::unordered_map<double, int>& count_frequency, int sample_number) {
     // The total permutations for a single OTU can be calculated by factorial division. We try to
     // simplify it here (ported from R code authored by Scott Ritchie)
     int max = 0;
@@ -184,7 +87,7 @@ double calculatePossiblePermutationsForOTU(std::unordered_map<double, int>& coun
         }
     }
     // Calculate the simpilfied numerator
-    for (int i = otu_table.sample_number; i > max; --i) {
+    for (int i = sample_number; i > max; --i) {
         numerator *= i;
     }
     // Finally calculate possible permutations for the OTU
@@ -193,7 +96,7 @@ double calculatePossiblePermutationsForOTU(std::unordered_map<double, int>& coun
 }
 
 
-double calculateExactPvalue(double otu_pair_possible_permutations, int& extreme_value_count, int& permutations) {
+double calculate_exact_pvalue(double otu_pair_possible_permutations, int& extreme_value_count, int& permutations) {
     // Function adapted and ported from statmod::permp
     // This cast is messy (also can't pass otu_pair as double reference for some reason)
     double prob[(int)otu_pair_possible_permutations];
@@ -209,7 +112,7 @@ double calculateExactPvalue(double otu_pair_possible_permutations, int& extreme_
 }
 
 
-double calculatePvalueWithIntegralEstimate(double& otu_pair_possible_permutations, int& extreme_value_count, int& permutations) {
+double calculate_pvalue_with_integral_estimate(double& otu_pair_possible_permutations, int& extreme_value_count, int& permutations) {
     // Function adapted and ported from statmod::permp and statmod::gaussquad
     // TODO: See if there is a better way to init array elements w/o hard coding
     // Start statmod::gaussquad port
@@ -256,44 +159,6 @@ double calculatePvalueWithIntegralEstimate(double& otu_pair_possible_permutation
     // TODO: Check if the double cast correctly done (it is required but maybe adding 1.0 instead of 1 is sufficient)
     // End statmod::permp port with p-value return
     return ((double)extreme_value_count + 1) / ((double)permutations + 1) - integral;
-}
-
-
-void writeOutMatrix(arma::Mat<double>& matrix, std::string out_filename, struct OtuTable& otu_table) {
-    // Get stream handle
-    std::ofstream outfile;
-    outfile.open(out_filename);
-    // Write out header
-    outfile << "#OTU ID";
-    for (std::vector<std::string>::iterator it = otu_table.otu_ids.begin(); it != otu_table.otu_ids.end(); ++it) {
-        outfile << "\t" << *it;
-    }
-    outfile << std::endl;
-    // Write out values
-    for (unsigned int i = 0; i < matrix.n_rows; ++i) {
-        for (unsigned int j = 0; j < matrix.n_cols; ++j) {
-            // Write the OTU id as first field in row
-            if (j == 0) {
-                outfile << otu_table.otu_ids[i];
-            }
-            outfile << "\t" << std::fixed << std::setprecision(5) << matrix(i, j);
-        }
-        outfile << std::endl;
-    }
-}
-
-
-int getIntFromChar(const char* optarg) {
-    // Check at most the first 8 characters are numerical
-    std::string optstring(optarg);
-    std::string string_int = optstring.substr(0, 8);
-    for (std::string::iterator it = string_int.begin(); it != string_int.end(); ++it) {
-        if (!isdigit(*it)) {
-            std::cerr << "This doesn't look like a number: " << optarg << std::endl;;
-            exit(1);
-        }
-    }
-    return std::atoi(string_int.c_str());
 }
 
 
@@ -362,7 +227,7 @@ int main(int argc, char **argv) {
                 bootstrap_prefix = optarg;
                 break;
             case 'n':
-                permutations = getIntFromChar(optarg);
+                permutations = get_int_from_char(optarg);
                 break;
             case 'o':
                 out_filename = optarg;
@@ -434,37 +299,41 @@ int main(int argc, char **argv) {
 
 
     // Read in otu tables (used to calculate total possible permutations)
-    struct OtuTable otu_table = loadOtuFile(otu_filename);
-    arma::Mat<double> counts(otu_table.otu_observations);
-    counts.reshape(otu_table.sample_number, otu_table.otu_number);
+    struct OtuTable otu_table;
+    otu_table.load_otu_file(otu_filename);
 
     // Read in observed correlation
-    arma::Mat<double> observed_correlation = loadCorrelation(correlation_filename, otu_table);
+    arma::Mat<double> observed_correlation = load_correlation_file(correlation_filename);
     arma::Mat<double> abs_observed_correlation = arma::abs(observed_correlation);
+
+    // Collect bootstrap correlation file paths
+    std::vector<std::string> bs_cor_paths = get_bootstrap_correlation_paths(bootstrap_prefix);
 
     // Loop through vector of bootstrap correlations and count values for i, j elements that are more extreme than obs
     arma::Mat<int> extreme_value_counts(otu_table.otu_number, otu_table.otu_number, arma::fill::zeros);
-    std::vector<std::string> bs_cor_paths = getBootstrapCorrelationPaths(bootstrap_prefix);
     for (std::vector<std::string>::iterator it = bs_cor_paths.begin(); it != bs_cor_paths.end(); ++it) {
-        arma::Mat<double> bootstrap_correlation = loadCorrelation(*it, otu_table);
+        // Load the bootstrap correlation and get absolute values
+        arma::Mat<double> bootstrap_correlation = load_correlation_file(*it);
         arma::Mat<double> abs_bootstrap_correlation = arma::abs(bootstrap_correlation);
-        countValuesMoreExtreme(abs_observed_correlation, abs_bootstrap_correlation, extreme_value_counts);
+
+        // Count if bootstrap correlation is greater than observed correlation
+        count_values_more_extreme(abs_observed_correlation, abs_bootstrap_correlation, extreme_value_counts);
     }
 
     // Calculate total possible permutations for each OTU
     arma::Col<double> possible_permutations(otu_table.otu_number, arma::fill::zeros);
     for (int i = 0; i < otu_table.otu_number; ++i) {
         // First we need to get the frequency of each count for an OTU across all samples
-	// TODO: Check that after changing from int counts to double (for corrected OTU counts) that these isn't borked
-	// Main concern that equality will not be true in some cases where they would be otherwise due to float error
+        // TODO: Check that after changing from int counts to double (for corrected OTU counts) that this isn't borked
+        // Main concern that equality will not be true in some cases where they would be otherwise due to float error
         std::unordered_map<double, int> count_frequency;
-        for (arma::Mat<double>::col_iterator it = counts.begin_col(i); it != counts.end_col(i); ++it) {
+        for (arma::Mat<double>::col_iterator it = otu_table.counts.begin_col(i); it != otu_table.counts.end_col(i); ++it) {
             ++count_frequency[*it];
         }
-        // Call function to calculate possible permutations and store
-        possible_permutations(i) = calculatePossiblePermutationsForOTU(count_frequency, otu_table);
-    }
 
+        // Call function to calculate possible permutations and store
+        possible_permutations(i) = calculate_possbile_otu_permutations(count_frequency, otu_table.sample_number);
+    }
 
     // Calculate p-values; loop through each i, j element in the extreme counts matrix
     arma::Mat<double> pvalues(otu_table.otu_number, otu_table.otu_number, arma::fill::zeros);
@@ -477,15 +346,14 @@ int main(int argc, char **argv) {
             if (otu_pair_possible_permutations <= 10000 ) {
                 // Exact p-value calculation
                 // If fewer than 10000 possible permutations, we can safely cast double to int
-                pvalues(i, j) = calculateExactPvalue((int)otu_pair_possible_permutations, extreme_value_counts(i, j), permutations);
+                pvalues(i, j) = calculate_exact_pvalue((int)otu_pair_possible_permutations, extreme_value_counts(i, j), permutations);
             } else {
                 // Integral approximation for p-value calculation
-                pvalues(i, j) = calculatePvalueWithIntegralEstimate(otu_pair_possible_permutations, extreme_value_counts(i, j), permutations);
+                pvalues(i, j) = calculate_pvalue_with_integral_estimate(otu_pair_possible_permutations, extreme_value_counts(i, j), permutations);
             }
         }
     }
 
-
     // Write out p-values
-    writeOutMatrix(pvalues, out_filename, otu_table);
+    write_out_square_otu_matrix(pvalues, otu_table, out_filename);
 }

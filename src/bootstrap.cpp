@@ -1,116 +1,32 @@
-#include <fstream>
-#include <iomanip>
-#include <iostream>
-#include <sstream>
 #include <time.h>
 #include <vector>
+
 
 #include <armadillo>
 #include <getopt.h>
 #include <gsl/gsl_randist.h>
 
 
-struct OtuTable {
-    std::vector<std::string> sample_names;
-    std::vector<std::string> otu_ids;
-    std::vector<double> otu_observations;
-    int otu_number;
-    int sample_number;
-};
+#include "common.h"
 
 
-struct OtuTable loadOtuFile(std::string filename) {
-    // TODO: Catch now filename or non-existent file
-    // Used to store strings from file prior to assignment
-    std::string line;
-    std::string ele;
-    std::stringstream line_stream;
-    // Other variables
-    struct OtuTable otu_table;
-    int otu_number = 0;
-    int sample_number = 0;
-    bool id;
-    // Open file stream
-    std::ifstream otu_file;
-    otu_file.open(filename);
-    // Process header
-    std::getline(otu_file, line);
-    line_stream.str(line);
-    // Iterate header columns
-    while(std::getline(line_stream, ele, '\t')) {
-        //TODO: Add assertion here
-        // Skip the #OTU ID column (first column)
-        if (ele == "#OTU ID") {
-            continue;
-        }
-        // Store samples
-        otu_table.sample_names.push_back(ele);
-        ++sample_number;
-    }
-    // Process sample counts, need to get OTU IDS first
-    while(std::getline(otu_file, line)) {
-        // TODO: Is there an alternate design pattern to loop variables as below
-        // Loop variables
-        // (Re)sets variables for loop
-        id = true;
-        line_stream.clear();
-        // Add current line to line stream and then split by tabs
-        line_stream.str(line);
-        while (std::getline(line_stream, ele, '\t')) {
-            // Grab the #OTU ID
-            if (id) {
-                otu_table.otu_ids.push_back(ele);
-                id = false;
-                continue;
+// Get bootstrap samples
+arma::Mat<double> get_bootstrap(OtuTable & otu_table, gsl_rng * p_rng) {
+        arma::Mat<double> bootstrap(otu_table.sample_number, otu_table.otu_number);
+        for (int j = 0; j < otu_table.otu_number; ++j) {
+            // Get a random list of sample indices equal to the number of samples
+            std::vector<arma::uword> indices(otu_table.sample_number);
+            for (std::vector<arma::uword>::iterator it = indices.begin(); it != indices.end(); ++it){
+                // With the random row element, determine position in counts matrix
+                int r = gsl_rng_uniform_int(p_rng, otu_table.sample_number);
+                *it = arma::sub2ind(arma::size(otu_table.counts), r, j);
             }
-            // Add current element to OTU count after converting to double
-            otu_table.otu_observations.push_back(std::stod(ele));
+            // Need to convert to uvec (Col<uword>) for use with arma subviews
+            arma::Col<arma::uword> arma_indices(indices);
+            // Gather random elements and set row in bootstrap matrix
+            bootstrap.col(j) = otu_table.counts(arma_indices);
         }
-        ++otu_number;
-    // TODO: Check if growing std::vector is sustainable for large tables
-    }
-    // Add counts to otu_table struct
-    otu_table.otu_number = otu_number;
-    otu_table.sample_number = sample_number;
-    return otu_table;
-}
-
-
-void writeOutMatrix(arma::Mat<double>& matrix, std::string out_filename, struct OtuTable& otu_table) {
-    // Get stream handle
-    std::ofstream outfile;
-    outfile.open(out_filename);
-    // Write out header
-    outfile << "#OTU ID";
-    for (std::vector<std::string>::iterator it = otu_table.sample_names.begin(); it != otu_table.sample_names.end(); ++it) {
-        outfile << "\t" << *it;
-    }
-    outfile << std::endl;
-    // Write out values
-    for (unsigned int i = 0; i < matrix.n_rows; ++i) {
-        for (unsigned int j = 0; j < matrix.n_cols; ++j) {
-            // Write the OTU id as first field in row
-            if (j == 0) {
-                outfile << otu_table.otu_ids[i];
-            }
-            outfile << "\t" << matrix(i, j);
-        }
-        outfile << std::endl;
-    }
-}
-
-
-int getIntFromChar(const char* optarg) {
-    // Check at most the first 8 characters are numerical
-    std::string optstring(optarg);
-    std::string string_int = optstring.substr(0, 8);
-    for (std::string::iterator it = string_int.begin(); it != string_int.end(); ++it) {
-        if (!isdigit(*it)) {
-            std::cerr << "This doesn't look like a number: " << optarg << std::endl;;
-            exit(1);
-        }
-    }
-    return std::atoi(string_int.c_str());
+        return bootstrap;
 }
 
 
@@ -170,7 +86,7 @@ int main(int argc, char **argv) {
                 bootstrap_prefix = optarg;
                 break;
             case 'n':
-                bootstrap_number = getIntFromChar(optarg);
+                bootstrap_number = get_int_from_char(optarg);
                 break;
             case 'h':
                 printHelp();
@@ -221,32 +137,18 @@ int main(int argc, char **argv) {
     gsl_rng_set(p_rng, time(NULL));
 
     // Load the OTU table from file
-    struct OtuTable otu_table = loadOtuFile(otu_filename);
-    // Construct count matrix
-    arma::Mat<double> counts(otu_table.otu_observations);
-    counts.reshape(otu_table.sample_number, otu_table.otu_number);
+    struct OtuTable otu_table;
+    otu_table.load_otu_file(otu_filename);
 
     // Get specified number of bootstrap samples
     for (int i = 0; i < bootstrap_number; ++i) {
-        // For each row in the matrix, random select elements (with replacement)
-        arma::Mat<double> bootstrap(otu_table.sample_number, otu_table.otu_number);
-        std::string bootstrap_filename = bootstrap_prefix + "_"  + std::to_string(i) + ".tsv";
-        for (int j = 0; j < otu_table.otu_number; ++j) {
-            // Get a random list of sample indices equal to the number of samples
-            std::vector<arma::uword> indices(otu_table.sample_number);
-            for (std::vector<arma::uword>::iterator it = indices.begin(); it != indices.end(); ++it){
-                // With the random row element, determine position in counts matrix
-                int r = gsl_rng_uniform_int(p_rng, otu_table.sample_number);
-                *it = arma::sub2ind(arma::size(counts), r, j);
-            }
-            // Need to convert to uvec (Col<uword>) for use with arma subviews
-            arma::Col<arma::uword> arma_indices(indices);
-            // Gather random elements and set row in bootstrap matrix
-            bootstrap.col(j) = counts(arma_indices);
-        }
+        // Get the bootstrap
+        arma::Mat<double> bootstrap = get_bootstrap(otu_table, p_rng);
+
         // Transpose matrix in place before writing out
         arma::inplace_trans(bootstrap);
-        writeOutMatrix(bootstrap, bootstrap_filename, otu_table);
+        std::string bootstrap_filename = bootstrap_prefix + "_"  + std::to_string(i) + ".tsv";
+        write_out_square_otu_matrix(bootstrap, otu_table, bootstrap_filename);
     }
 
     // Free rng memory
