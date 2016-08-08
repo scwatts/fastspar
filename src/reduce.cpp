@@ -103,7 +103,7 @@ void printHelp() {
     std::cerr << "Usage:" << std::endl;
     std::cerr << "  reduce --correlation_table <cf> --pvalue_table <pf> --correlation <rt> --pvalue <pt> --output_prefix <op>" << std::endl;
     std::cerr << std::endl;
-    std::cerr << "  -c/--correlation_table <cf>       OTU input table" << std::endl;
+    std::cerr << "  -c/--correlation_table <cf>       Correlation input table" << std::endl;
     std::cerr << "  -p/--pvalue_table <pf>            Number of bootstrap samples to generate" << std::endl;
     std::cerr << "  -r/--correlation <rt>             Absolute (sign is ignored) correlation threshold (default: 0.1)" << std::endl;
     std::cerr << "  -v/--pvalue <pt>                  P-value threshold (default: 0.05)" << std::endl;
@@ -198,12 +198,12 @@ int main(int argc, char **argv) {
         std::cerr << ": error: argument -o/--output_prefix is required" << std::endl;
         exit(1);
     }
-    // Check that the OTU file exists
+    // Check that the correlation file exists
     std::ifstream checkfile;
     checkfile.open(correlation_filename);
     if (!checkfile.good()) {
         std::cerr << std::endl << argv[0];
-        std::cerr << ": error: OTU table file " << correlation_filename << " does not exist" << std::endl;
+        std::cerr << ": error: correlation table file " << correlation_filename << " does not exist" << std::endl;
         exit(1);
     }
     checkfile.close();
