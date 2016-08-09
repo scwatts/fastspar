@@ -220,8 +220,26 @@ int main(int argc, char **argv) {
     SquareMatrix pvalue_table = load_square_matrix(pvalue_filename);
 
     // Find index of elements which both pass specified threshold
-    arma::Col<arma::uword> filtered_element_indices = arma::find(arma::abs(correlation_table.elements) >= correlation_threshold &&
+    arma::Col<arma::uword> all_filtered_element_indices = arma::find(arma::abs(correlation_table.elements) >= correlation_threshold &&
                                                           pvalue_table.elements <= pvalue_threshold);
+
+    // Select indices in the upper triangle of the matrix (to prevent outputing the same
+    // correlation or p-value twice)
+    std::vector<arma::uword> filtered_element_indices_vector;
+    for (unsigned int i = 0; i < all_filtered_element_indices.n_elem; ++i) {
+        // Convert linear index (i) to subscript (i,j)
+        arma::uword linear_index = all_filtered_element_indices(i);
+        arma::Col<arma::uword> subscript_index = arma::ind2sub(arma::size(correlation_table.elements), linear_index);
+
+        // Check it is the in the upper half and then add it to the filtered vector
+        if (subscript_index(0) >= subscript_index(1)) {
+            filtered_element_indices_vector.push_back(linear_index);
+        }
+    }
+
+    // Convert the vector of filtered indices so we can use it with Armadillo
+    arma::Col<arma::uword> filtered_element_indices(filtered_element_indices_vector);
+
     // Will have a generalised function for this
     SparseMatrix filtered_correlation_table = filter_matrix(correlation_table, filtered_element_indices);
     SparseMatrix filtered_pvalue_table = filter_matrix(pvalue_table, filtered_element_indices);
