@@ -123,7 +123,7 @@ void write_out_square_otu_matrix(arma::Mat<double> & matrix, OtuTable & otu_tabl
             if (j == 0) {
                 outfile << otu_table.otu_ids[i];
             }
-            outfile << std::fixed << std::setw(8) << std::setprecision(4) << "\t" <<
+            outfile << std::fixed << std::setprecision(4) << "\t" <<
             matrix(i, j);
         }
         outfile << std::endl;
