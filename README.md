@@ -1,13 +1,15 @@
 # SparCpp
-A c++ implementation of the SparCC algorithm published here: Friedman, J. & Alm, E. J. Inferring correlation networks from genomic survey data. PLoS Comput. Biol. 8, e1002687 (2012). There is an approximately 50x speed up compared to the original Python2 implementation.
+SparCpp is a c++ implementation of the SparCC algorithm published here: Friedman, J. & Alm, E. J. Inferring correlation networks from genomic survey data. PLoS Comput. Biol. 8, e1002687 (2012). There is an approximately 50x speed up compared to the original Python2 implementation and greatly reduced memory usage.
 
 Many of the processes of SparCpp were ported from original SparCC implementation found here: https://bitbucket.org/yonatanf/sparcc
 
-Additionally, SparCC's method of p-value has been replaced with exact p-value calculation. This code was adopted from the permp function from the statmod R package. The advantages of this alternative method are discussed here: Phipson, B. & Smyth, G. K. Permutation p-values should never be zero: calculating exact p-values when permutations are randomly drawn Stat Appl Genet Mol Biol. 9: Article 39 (2010).
+Additionally, SparCC's method of p-value has been replaced with exact p-value calculation. This code was adopted from the permp function from the statmod R package and from an example provided by Scott Ritchie. The advantages of this alternative method are discussed here: Phipson, B. & Smyth, G. K. Permutation p-values should never be zero: calculating exact p-values when permutations are randomly drawn Stat Appl Genet Mol Biol. 9: Article 39 (2010).
+
+SparCpp is currently in development and may lack certain features expected in complete programs. While SparCpp generally works without issue, extra care must be taken to ensure that correctly formatted input data are provided.
 
 
 ## Installing
-SparCpp has been written using c++ with Armadillo, GNU Scientific Library (GSL), and getopt. Compilation will require these libraries. Further, the exact p-value executable requires compilation of FORTRAN code.
+SparCpp has been written using c++11 with Armadillo, GNU Scientific Library (GSL), and getopt. Compilation will require these libraries. Further, the exact p-value executable requires compilation of FORTRAN code.
 
 
 ### Prerequisities
@@ -37,7 +39,7 @@ Once done, the SparCpp executables will be in PATH
 
 ## Usage
 ### Correlation inference
-To run SparCpp, you must have a OTU absolute counts in BIOM tsv format file (with no metadata). The `fake_data.txt` (from the original SparCC implementation) will be used as an example:
+To run SparCpp, you must have absolute OTU counts in BIOM tsv format file (with no metadata). The `fake_data.txt` (from the original SparCC implementation) will be used as an example:
 
 ```bash
 sparcpp --otu_table fake_data.txt --correlation median_correlation.tsv --covariance median_covariance.tsv
