@@ -1,5 +1,5 @@
 # Compiler flags
-AM_CXXFLAGS=-std=c++11 -Wall -Wextra
+AM_CXXFLAGS=-std=c++11 -Wall -Wextra -fopenmp
 AM_FFLAGS=-Wall -Wextra
 # Declaring files
 bin_PROGRAMS = sparcpp sparcpp_bootstrap sparcpp_exactpvalues sparcpp_reduce

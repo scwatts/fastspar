@@ -10,6 +10,7 @@ if test "$HDF5" = "no"; then
         AC_MSG_ERROR(could not find the library HDF5)
 fi
 # Use built-in macros to check for other libraries
+AC_CHECK_LIB(gomp, main, [LIBS="$LIBS -lgomp"], AC_MSG_ERROR(could not find the library OpenMP))
 AC_CHECK_LIB(armadillo, main, [LIBS="$LIBS -larmadillo"], AC_MSG_ERROR(could not find the library Armadillo))
 AC_CHECK_LIB(m, cos, [LIBS="$LIBS -lm"], AC_MSG_ERROR(could not find the library LibM))
 AC_CHECK_LIB(gslcblas, cblas_dgemm, [LIBS="-lgslcblas $LIBS"], AC_MSG_ERROR(could not find the library GSL (gslcblas)))
