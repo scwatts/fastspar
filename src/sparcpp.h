@@ -61,8 +61,9 @@ struct SparCppIteration {
     // Variance of estimated OTU fractions
     arma::Mat<double> variance;
 
-    // List of highly OTU pairs excluded in this iteration
+    // List of highly OTU pairs excluded in this iteration and number of components remaining
     std::vector<arma::uword> excluded;
+    unsigned int components_remaining;
 
     // Basis variance vector
     arma::Col<double> basis_variance;

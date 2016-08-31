@@ -45,6 +45,13 @@ void SparCpp::infer_correlation_and_covariance() {
 
         // STEP 4: Exclude highly correlated pairs, repeating correlation/ covariance calculation each iteration
         for (int j = 0; j < exclusion_iterations; ++j) {
+            // The SparCC algorithm is only valid for 4 or more components, after exclusion if we
+            // have left with fewer than 3 we exit early
+            if (sparcpp_iteration.components_remaining < 4) {
+                fprintf(stderr, "Exclusion iterations ending early; we need at least 4 non-excluded pairs for SparCC\n");
+                break;
+            }
+
             // Find and exclude pairs
             sparcpp_iteration.find_and_exclude_pairs(exclusion_threshold);
             // Recalculate component variation after pair exclusion
@@ -70,15 +77,16 @@ void SparCpp::infer_correlation_and_covariance() {
 
 
 // Initialise a SparCpp object (must be parsed a pointer to an OTU table struct and other paramters)
-SparCppIteration::SparCppIteration(const OtuTable * otu_table, int exclusion_iterations, int exclusion_threshold) {
-    SparCppIteration::otu_table = otu_table;
-    SparCppIteration::exclusion_iterations = exclusion_iterations;
-    SparCppIteration::exclusion_threshold = exclusion_threshold;
+SparCppIteration::SparCppIteration(const OtuTable * _otu_table, int _exclusion_iterations, int _exclusion_threshold) {
+    otu_table = _otu_table;
+    exclusion_iterations = _exclusion_iterations;
+    exclusion_threshold = _exclusion_threshold;
+    components_remaining = otu_table->otu_number;
 
     // We also have to setup the mod matrix
     std::vector<double> mod_diag(otu_table->otu_number, otu_table->otu_number - 2);
-    arma::Mat<double> mod = arma::diagmat((arma::Col<double>) mod_diag);
-    SparCppIteration::mod = mod + 1;
+    arma::Mat<double> _mod = arma::diagmat((arma::Col<double>) mod_diag);
+    mod = _mod + 1;
 }
 
 
@@ -194,9 +202,11 @@ void SparCppIteration::find_and_exclude_pairs(float threshold) {
             unsigned int diagonal_idx = *it % otu_table->otu_number;
             mod.diag()[diagonal_idx] -= 1;
             // TODO: Check if it's quicker to select all elements at once and then subtract one
-            mod(*it) -= 1;
+            --mod(*it);
             // Also add excluded indices to running list
             excluded.push_back(*it);
+            // Finally decrease remaining component count
+            --components_remaining;
         }
     }
 }
@@ -397,6 +407,12 @@ int main(int argc, char **argv) {
     // Load the OTU table from file and construct count matrix
     struct OtuTable otu_table;
     otu_table.load_otu_file(otu_filename);
+
+    // Make sure we have at least 4 components to run SparCC
+    if (otu_table.otu_number < 4) {
+        fprintf(stderr, "The SparCC algorithm requires at least 4 components to run\n");
+        exit(0);
+    }
 
     // Initialise a SparCpp object
     SparCpp sparcpp(&otu_table, iterations, exclude_iterations, threshold, p_rng);
