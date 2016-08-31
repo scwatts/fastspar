@@ -9,7 +9,7 @@ SparCpp is currently in development and may lack certain features expected in co
 
 
 ## Installing
-SparCpp has been written using c++11 with Armadillo, GNU Scientific Library (GSL), and getopt. Compilation will require these libraries. Further, the exact p-value executable requires compilation of FORTRAN code.
+SparCpp has been written using c++11 with Armadillo, GNU Scientific Library (GSL), OpenMP, and getopt. Compilation will require these libraries. Further, the exact p-value executable requires compilation of FORTRAN code.
 
 
 ### Prerequisities
@@ -18,6 +18,7 @@ For compilation the following is required:
 C++11
 Gfortran
 Armadillo 6.7+
+OpenMP 4.5+
 GNU Scientific Library 2.1+
 GNU getopt
 GNU make
