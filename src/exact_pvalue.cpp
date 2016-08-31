@@ -301,6 +301,13 @@ int main(int argc, char **argv) {
         bootstrap_prefix += "*";
     }
 
+    // Collect bootstrap correlation file paths and then make sure we have found the correct number
+    std::vector<std::string> bs_cor_paths = get_bootstrap_correlation_paths(bootstrap_prefix);
+    if (bs_cor_paths.size() != permutations) {
+	    printf("ERROR: number of permutations, %i, isn't equal to the number of bootstrap correlations found, %zu\n",
+			    permutations, bs_cor_paths.size());
+	    exit(0);
+    }
 
     // Read in otu tables (used to calculate total possible permutations)
     printf("Reading in OTU count table\n");
@@ -311,9 +318,6 @@ int main(int argc, char **argv) {
     printf("Reading in observed correlations\n");
     arma::Mat<double> observed_correlation = load_correlation_file(correlation_filename);
     arma::Mat<double> abs_observed_correlation = arma::abs(observed_correlation);
-
-    // Collect bootstrap correlation file paths
-    std::vector<std::string> bs_cor_paths = get_bootstrap_correlation_paths(bootstrap_prefix);
 
     // Loop through vector of bootstrap correlations and count values for i, j elements that are more extreme than obs
     printf("Reading in %zu bootstrap correlations\n", bs_cor_paths.size());
