@@ -41,6 +41,9 @@ std::vector<std::string> get_bootstrap_correlation_paths(std::string& glob_path)
 void count_values_more_extreme(arma::Mat<double>& abs_observed_correlation,
                                arma::Mat<double>& abs_bootstrap_correlation,
                                arma::Mat<int>& extreme_value_counts) {
+    // TODO: Check if this is faster than actually just processing the elements
+    // Set diagonal to zero to avoid processing self pairs of OTUs
+    abs_bootstrap_correlation.diag().zeros();
     // Find values more extreme than observed in bootstrap for each i,j element
     arma::Col<arma::uword> extreme_value_index = arma::find(abs_bootstrap_correlation >= abs_observed_correlation);
     // For each more extreme value, increment count in extreme_value_counts
