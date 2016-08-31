@@ -106,18 +106,23 @@ void SparCppIteration::estimate_component_fractions(gsl_rng * p_rng) {
 
 
 void SparCppIteration::calculate_log_ratio_variance() {
-    // TODO: Given this is a square mat, check that we're required to iterate over all as in SparCC (thinking only half)
-    // TODO: !IMPORTANT we're not assigning all elements in the variance matrix, is this correct?
+    // Log fraction matrix
+    arma::Mat<double> log_fractions = arma::log(fractions);
+
+    // Create zero-filled matrix for variance and get all combinations of column variance
     arma::Mat<double> temp_variance(fractions.n_cols, fractions.n_cols, arma::fill::zeros);
     for (unsigned int i = 0; i < fractions.n_cols - 1; ++i) {
-        for (unsigned int j = i + 1; j < fractions.n_cols; ++j) {
-            arma::Col<double> log_ratio_col = arma::log(fractions.col(i) / fractions.col(j));
-            double col_variance = arma::var(log_ratio_col);
-            temp_variance(i, j) = temp_variance(j, i) = col_variance;
-        }
-    }
-    // Move temp_variance to SparCppIteration.variance
-    variance = std::move(temp_variance);
+         for (unsigned int j = i + 1; j < fractions.n_cols; ++j) {
+             // Calculate variance of log fractions
+             arma::Col<double> log_ratio_col = log_fractions.col(i) - log_fractions.col(j);
+             double col_variance = arma::var(log_ratio_col);
+
+             // Add to matrix
+             temp_variance(j, i) = col_variance;
+         }
+     }
+    // Reflect lower triangle to upper and move temp_variance to SparCppIteration.variance
+    variance = arma::symmatl(temp_variance);
 }
 
 
