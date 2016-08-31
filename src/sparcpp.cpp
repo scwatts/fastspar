@@ -24,10 +24,12 @@ SparCpp::SparCpp(const OtuTable * otu_table, int iterations, int exclusion_itera
 
 // Run the SparCpp algorithm
 void SparCpp::infer_correlation_and_covariance() {
+
+#pragma omp parallel for
     for (int i = 0; i < iterations; ++i) {
         // Create a SparCppIteration object
         SparCppIteration sparcpp_iteration(otu_table, exclusion_iterations, exclusion_threshold);
-        std::cout << "Running iteration: " << i + 1 << std::endl;
+        printf("Running iteration: %i\n", i + 1);
 
         // TODO: Refactor as a method for SparCppIterations
 
