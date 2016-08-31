@@ -326,12 +326,11 @@ int main(int argc, char **argv) {
     printf("Reading in %zu bootstrap correlations\n", bs_cor_paths.size());
     arma::Mat<int> extreme_value_counts(otu_table.otu_number, otu_table.otu_number, arma::fill::zeros);
 
-    unsigned int bootstrap_number = 0;
-    for (std::vector<std::string>::iterator it = bs_cor_paths.begin(); it != bs_cor_paths.end(); ++it) {
-        ++bootstrap_number;
-        printf("\tBootstrap correlation %i: %s\n", bootstrap_number, it->c_str());
+#pragma omp parallel for
+    for (int unsigned i = 0; i < bs_cor_paths.size(); ++i) {
+        printf("\tBootstrap correlation %i: %s\n", i, bs_cor_paths[i].c_str());
         // Load the bootstrap correlation and get absolute values
-        arma::Mat<double> bootstrap_correlation = load_correlation_file(*it);
+        arma::Mat<double> bootstrap_correlation = load_correlation_file(bs_cor_paths[i]);
         arma::Mat<double> abs_bootstrap_correlation = arma::abs(bootstrap_correlation);
 
         // Count if bootstrap correlation is greater than observed correlation
@@ -358,6 +357,8 @@ int main(int argc, char **argv) {
     // Calculate p-values; loop through each i, j element in the extreme counts matrix
     printf("Calculating the %i p-values\n", otu_table.otu_number*otu_table.otu_number);
     arma::Mat<double> pvalues(otu_table.otu_number, otu_table.otu_number, arma::fill::zeros);
+
+#pragma omp parallel for
     for (int i = 0; i < otu_table.otu_number; ++i) {
         printf("\tCalculating p-values for row %i with %s\n", i, otu_table.otu_ids[i].c_str());
         for (int j = 0; j < otu_table.otu_number; ++j) {
