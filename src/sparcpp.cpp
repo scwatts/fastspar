@@ -202,7 +202,7 @@ void SparCppIteration::find_and_exclude_pairs(float threshold) {
 }
 
 
-void SparCpp::calulcate_median_correlation_and_covariance() {
+void SparCpp::calculate_median_correlation_and_covariance() {
     // Get median of all i,j elements across the iterations for correlation
     // Add correlation matrices to arma Cube so that we can get views of all i, j of each matrix
     arma::Cube<double> correlation_cube(otu_table->otu_number, otu_table->otu_number, correlation_vector.size());
@@ -407,7 +407,7 @@ int main(int argc, char **argv) {
 
     // Calculate the final SparCpp correlation and covariances
     printf("Calculating final SparCC correlations and covariances\n");
-    sparcpp.calulcate_median_correlation_and_covariance();
+    sparcpp.calculate_median_correlation_and_covariance();
 
     // Write median correlation and covariance matrices
     printf("Writing out median correlation and covariance matrices\n");

@@ -46,7 +46,7 @@ struct SparCpp {
     void infer_correlation_and_covariance();
 
     // Calculate the final correlation and covariance for OTUs
-    void calulcate_median_correlation_and_covariance();
+    void calculate_median_correlation_and_covariance();
 };
 
 
