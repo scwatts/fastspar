@@ -29,7 +29,7 @@ void SparCpp::infer_correlation_and_covariance() {
     for (int i = 0; i < iterations; ++i) {
         // Create a SparCppIteration object
         SparCppIteration sparcpp_iteration(otu_table, exclusion_iterations, exclusion_threshold);
-        printf("Running iteration: %i\n", i + 1);
+        printf("\tRunning iteration: %i\n", i + 1);
 
         // TODO: Refactor as a method for SparCppIterations
 
@@ -397,12 +397,15 @@ int main(int argc, char **argv) {
     SparCpp sparcpp(&otu_table, iterations, exclude_iterations, threshold, p_rng);
 
     // Run SparCpp iterations
+    printf("Running SparCC iterations\n");
     sparcpp.infer_correlation_and_covariance();
 
     // Calculate the final SparCpp correlation and covariances
+    printf("Calculating final SparCC correlations and covariances\n");
     sparcpp.calulcate_median_correlation_and_covariance();
 
     // Write median correlation and covariance matrices
+    printf("Writing out median correlation and covariance matrices\n");
     write_out_square_otu_matrix(sparcpp.median_correlation, otu_table, correlation_filename);
     write_out_square_otu_matrix(sparcpp.median_covariance, otu_table, covariance_filename);
 
