@@ -97,7 +97,7 @@ double calculate_possbile_otu_permutations(std::unordered_map<double, int>& coun
 }
 
 
-double calculate_exact_pvalue(double otu_pair_possible_permutations, int& extreme_value_count, int& permutations) {
+double calculate_exact_pvalue(double otu_pair_possible_permutations, int& extreme_value_count, unsigned int& permutations) {
     // Function adapted and ported from statmod::permp
     // This cast is messy (also can't pass otu_pair as double reference for some reason)
     double prob[(int)otu_pair_possible_permutations];
@@ -113,7 +113,7 @@ double calculate_exact_pvalue(double otu_pair_possible_permutations, int& extrem
 }
 
 
-double calculate_pvalue_with_integral_estimate(double& otu_pair_possible_permutations, int& extreme_value_count, int& permutations) {
+double calculate_pvalue_with_integral_estimate(double& otu_pair_possible_permutations, int& extreme_value_count, unsigned int& permutations) {
     // Function adapted and ported from statmod::permp and statmod::gaussquad
     // TODO: See if there is a better way to init array elements w/o hard coding
     // Start statmod::gaussquad port
@@ -186,7 +186,7 @@ int main(int argc, char **argv) {
     std::string correlation_filename;
     std::string bootstrap_prefix;
     std::string out_filename;
-    int permutations = 0;
+    unsigned int permutations = 0;
 
     // Commandline arguments (for getlongtops)
     struct option long_options[] =
