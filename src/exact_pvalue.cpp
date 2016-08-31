@@ -241,6 +241,7 @@ int main(int argc, char **argv) {
     if (optind < argc){
         std::cerr << argv[0] << " invalid argument: " << argv[optind++] << std::endl;
     }
+
     // Make sure we have filenames and parameters
     if (otu_filename.empty()) {
         printHelp();
@@ -272,6 +273,7 @@ int main(int argc, char **argv) {
         std::cerr << ": error: argument -o/--output is required" << std::endl;
         exit(1);
     }
+
     // Check that the OTU file exists
     std::ifstream checkfile;
     checkfile.open(otu_filename);
@@ -289,6 +291,7 @@ int main(int argc, char **argv) {
         exit(1);
     }
     checkfile.close();
+
     // Make sure our prefix has a trailing '*' for globbing
     if (bootstrap_prefix.back() != '*') {
         bootstrap_prefix += "*";
@@ -296,10 +299,12 @@ int main(int argc, char **argv) {
 
 
     // Read in otu tables (used to calculate total possible permutations)
+    printf("Reading in OTU count table\n");
     struct OtuTable otu_table;
     otu_table.load_otu_file(otu_filename);
 
     // Read in observed correlation
+    printf("Reading in observed correlations\n");
     arma::Mat<double> observed_correlation = load_correlation_file(correlation_filename);
     arma::Mat<double> abs_observed_correlation = arma::abs(observed_correlation);
 
@@ -307,8 +312,13 @@ int main(int argc, char **argv) {
     std::vector<std::string> bs_cor_paths = get_bootstrap_correlation_paths(bootstrap_prefix);
 
     // Loop through vector of bootstrap correlations and count values for i, j elements that are more extreme than obs
+    printf("Reading in %zu bootstrap correlations\n", bs_cor_paths.size());
     arma::Mat<int> extreme_value_counts(otu_table.otu_number, otu_table.otu_number, arma::fill::zeros);
+
+    unsigned int bootstrap_number = 0;
     for (std::vector<std::string>::iterator it = bs_cor_paths.begin(); it != bs_cor_paths.end(); ++it) {
+        ++bootstrap_number;
+        printf("\tBootstrap correlation %i: %s\n", bootstrap_number, it->c_str());
         // Load the bootstrap correlation and get absolute values
         arma::Mat<double> bootstrap_correlation = load_correlation_file(*it);
         arma::Mat<double> abs_bootstrap_correlation = arma::abs(bootstrap_correlation);
@@ -318,8 +328,10 @@ int main(int argc, char **argv) {
     }
 
     // Calculate total possible permutations for each OTU
+    printf("Calculating %i total permutations\n", otu_table.otu_number);
     arma::Col<double> possible_permutations(otu_table.otu_number, arma::fill::zeros);
     for (int i = 0; i < otu_table.otu_number; ++i) {
+	printf("\tTotal permutation %i for %s\n", i, otu_table.otu_ids[i].c_str());
         // First we need to get the frequency of each count for an OTU across all samples
         // TODO: Check that after changing from int counts to double (for corrected OTU counts) that this isn't borked
         // Main concern that equality will not be true in some cases where they would be otherwise due to float error
@@ -333,8 +345,10 @@ int main(int argc, char **argv) {
     }
 
     // Calculate p-values; loop through each i, j element in the extreme counts matrix
+    printf("Calculating the %i p-values\n", otu_table.otu_number*otu_table.otu_number);
     arma::Mat<double> pvalues(otu_table.otu_number, otu_table.otu_number, arma::fill::zeros);
     for (int i = 0; i < otu_table.otu_number; ++i) {
+        printf("\tCalculating p-values for row %i with %s\n", i, otu_table.otu_ids[i].c_str());
         for (int j = 0; j < otu_table.otu_number; ++j) {
             // Get the total possible permutations between the OTU pair
             // TODO: Check if this is producing desired results
@@ -352,5 +366,6 @@ int main(int argc, char **argv) {
     }
 
     // Write out p-values
+    printf("Writing out p-values\n");
     write_out_square_otu_matrix(pvalues, otu_table, out_filename);
 }
