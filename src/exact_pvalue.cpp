@@ -89,7 +89,11 @@ double calculate_possbile_otu_permutations(std::unordered_map<double, int>& coun
     }
     // Finally calculate possible permutations for the OTU
     // TODO: This method can produce Inf, is this okay?
-    return numerator / denominator;
+    if (std::isinf(numerator) || std::isinf(denominator)) {
+        return std::numeric_limits<double>::infinity();
+    } else {
+        return numerator / denominator;
+    }
 }
 
 
