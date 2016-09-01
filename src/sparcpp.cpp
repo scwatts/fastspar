@@ -124,8 +124,7 @@ void SparCppIteration::calculate_log_ratio_variance() {
     for (unsigned int i = 0; i < fractions.n_cols - 1; ++i) {
          for (unsigned int j = i + 1; j < fractions.n_cols; ++j) {
              // Calculate variance of log fractions
-             arma::Col<double> log_ratio_col = log_fractions.col(i) - log_fractions.col(j);
-             double col_variance = arma::var(log_ratio_col);
+             double col_variance = arma::var(log_fractions.col(i) - log_fractions.col(j));
 
              // Add to matrix
              temp_variance(j, i) = col_variance;
