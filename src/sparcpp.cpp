@@ -1,4 +1,5 @@
 #include <string>
+#include <thread>
 #include <time.h>
 #include <vector>
 
@@ -301,6 +302,7 @@ int main(int argc, char **argv) {
     unsigned int exclude_iterations = 10;
     float threshold = 0.1;
     unsigned int threads = 1;
+    unsigned int available_threads = std::thread::hardware_concurrency();
 
     // Declare some important variables
     std::string otu_filename;
@@ -403,7 +405,10 @@ int main(int argc, char **argv) {
         std::cerr << "Must have at least 1 thread" << std::endl;
         exit(1);
     }
-    if (threads > 64) {
+    if (available_threads > 1 && threads > available_threads) {
+        std::cerr << "The machine only has " << available_threads << " threads, you asked for " << threads << std::endl;
+        exit(1);
+    } else if (threads > 64) {
         std::cerr << "Current hardcode limit of 64 threads" << std::endl;
         exit(1);
     }

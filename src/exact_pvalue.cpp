@@ -1,5 +1,6 @@
 #include <cmath>
 #include <unordered_map>
+#include <thread>
 #include <string>
 #include <vector>
 
@@ -195,6 +196,7 @@ int main(int argc, char **argv) {
     std::string out_filename;
     unsigned int permutations = 0;
     unsigned int threads = 1;
+    unsigned int available_threads = std::thread::hardware_concurrency();
 
     // Commandline arguments (for getlongtops)
     struct option long_options[] =
@@ -263,7 +265,10 @@ int main(int argc, char **argv) {
         std::cerr << "Must have at least 1 thread" << std::endl;
         exit(1);
     }
-    if (threads > 64) {
+    if (available_threads > 1 && threads > available_threads) {
+        std::cerr << "The machine only has " << available_threads << " threads, you asked for " << threads << std::endl;
+        exit(1);
+    } else if (threads > 64) {
         std::cerr << "Current hardcode limit of 64 threads" << std::endl;
         exit(1);
     }
