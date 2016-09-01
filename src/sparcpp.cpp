@@ -13,12 +13,12 @@
 
 
 // Initialise a SparCpp object (must be parsed a pointer to an OTU table struct and other paramters)
-SparCpp::SparCpp(const OtuTable * otu_table, int iterations, int exclusion_iterations, int exclusion_threshold, gsl_rng * p_rng) {
-    SparCpp::otu_table = otu_table;
-    SparCpp::iterations = iterations;
-    SparCpp::exclusion_iterations = exclusion_iterations;
-    SparCpp::exclusion_threshold = exclusion_threshold;
-    SparCpp::p_rng = p_rng;
+SparCpp::SparCpp(const OtuTable * _otu_table, unsigned int _iterations, unsigned int _exclusion_iterations, unsigned int _exclusion_threshold, gsl_rng * _p_rng) {
+    otu_table = _otu_table;
+    iterations = _iterations;
+    exclusion_iterations = _exclusion_iterations;
+    exclusion_threshold = _exclusion_threshold;
+    p_rng = _p_rng;
 }
 
 
@@ -44,7 +44,7 @@ void SparCpp::infer_correlation_and_covariance() {
         sparcpp_iteration.calculate_correlation_and_corvariance();
 
         // STEP 4: Exclude highly correlated pairs, repeating correlation/ covariance calculation each iteration
-        for (int j = 0; j < exclusion_iterations; ++j) {
+        for (unsigned int j = 0; j < exclusion_iterations; ++j) {
             // The SparCC algorithm is only valid for 4 or more components, after exclusion if we
             // have left with fewer than 3 we exit early
             if (sparcpp_iteration.components_remaining < 4) {
@@ -77,7 +77,7 @@ void SparCpp::infer_correlation_and_covariance() {
 
 
 // Initialise a SparCpp object (must be parsed a pointer to an OTU table struct and other paramters)
-SparCppIteration::SparCppIteration(const OtuTable * _otu_table, int _exclusion_iterations, int _exclusion_threshold) {
+SparCppIteration::SparCppIteration(const OtuTable * _otu_table, unsigned int _exclusion_iterations, unsigned int _exclusion_threshold) {
     otu_table = _otu_table;
     exclusion_iterations = _exclusion_iterations;
     exclusion_threshold = _exclusion_threshold;
@@ -294,8 +294,8 @@ void printHelp() {
 
 int main(int argc, char **argv) {
     // Set some default parameters
-    int iterations = 20;
-    int exclude_iterations = 10;
+    unsigned int iterations = 20;
+    unsigned int exclude_iterations = 10;
     float threshold = 0.1;
 
     // Declare some important variables

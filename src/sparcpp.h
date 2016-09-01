@@ -15,9 +15,9 @@
 
 struct SparCpp {
     // Some algorithm parameters
-    int iterations;
-    int exclusion_iterations;
-    int exclusion_threshold;
+    unsigned int iterations;
+    unsigned int exclusion_iterations;
+    unsigned int exclusion_threshold;
 
     // RNG
     gsl_rng * p_rng;
@@ -40,7 +40,7 @@ struct SparCpp {
 
 
     // Construct SparCpp with a given otu_table and other parameters
-    SparCpp(const OtuTable * otu_table, int iterations, int exclusion_iterations, int exclusion_threshold, gsl_rng * p_rng);
+    SparCpp(const OtuTable * _otu_table, unsigned int _iterations, unsigned int _exclusion_iterations, unsigned int _exclusion_threshold, gsl_rng * _p_rng);
 
     // Infer correlation and covariance for n iterations
     void infer_correlation_and_covariance();
@@ -53,8 +53,8 @@ struct SparCpp {
 struct SparCppIteration {
     // Some variables
     const OtuTable * otu_table;
-    int exclusion_iterations;
-    int exclusion_threshold;
+    unsigned int exclusion_iterations;
+    unsigned int exclusion_threshold;
 
     // Estimated fractions of OTUs
     arma::Mat<double> fractions;
@@ -76,7 +76,7 @@ struct SparCppIteration {
 
 
     // Construct SparCppIterations with a given otu_table and other parameters
-    SparCppIteration(const OtuTable * otu_table, int exclusion_iterations, int exclusion_threshold);
+    SparCppIteration(const OtuTable * _otu_table, unsigned int _exclusion_iterations, unsigned int _exclusion_threshold);
 
     // Estimates component fraction of all OTUs across samples using a dirichlet distribution
     void estimate_component_fractions(gsl_rng * p_rng);
