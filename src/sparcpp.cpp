@@ -27,7 +27,7 @@ SparCpp::SparCpp(const OtuTable * _otu_table, unsigned int _iterations, unsigned
 // Run the SparCpp algorithm
 void SparCpp::infer_correlation_and_covariance() {
 
-#pragma omp parallel for num_threads(threads)
+#pragma omp parallel for num_threads(threads) schedule(static, 1)
     for (unsigned int i = 0; i < iterations; ++i) {
         // Create a SparCppIteration object
         SparCppIteration sparcpp_iteration(otu_table, exclusion_iterations, exclusion_threshold);

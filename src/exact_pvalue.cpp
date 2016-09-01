@@ -350,7 +350,7 @@ int main(int argc, char **argv) {
     printf("Reading in %zu bootstrap correlations\n", bs_cor_paths.size());
     arma::Mat<int> extreme_value_counts(otu_table.otu_number, otu_table.otu_number, arma::fill::zeros);
 
-#pragma omp parallel for num_threads(threads)
+#pragma omp parallel for num_threads(threads) schedule(static, 1)
     for (int unsigned i = 0; i < bs_cor_paths.size(); ++i) {
         printf("\tBootstrap correlation %i: %s\n", i, bs_cor_paths[i].c_str());
         // Load the bootstrap correlation and get absolute values
@@ -382,7 +382,7 @@ int main(int argc, char **argv) {
     printf("Calculating the %i p-values\n", otu_table.otu_number*otu_table.otu_number);
     arma::Mat<double> pvalues(otu_table.otu_number, otu_table.otu_number, arma::fill::zeros);
 
-#pragma omp parallel for num_threads(threads)
+#pragma omp parallel for num_threads(threads) schedule(static, 1)
     for (int i = 0; i < otu_table.otu_number; ++i) {
         printf("\tCalculating p-values for row %i with %s\n", i, otu_table.otu_ids[i].c_str());
         for (int j = 0; j < otu_table.otu_number; ++j) {
