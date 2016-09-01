@@ -22,6 +22,9 @@ struct SparCpp {
     // RNG
     gsl_rng * p_rng;
 
+    // Threads to use during iteration
+    unsigned int threads;
+
     // Filenames
     std::string otu_filename;
     std::string correlation_output_filename;
@@ -40,7 +43,7 @@ struct SparCpp {
 
 
     // Construct SparCpp with a given otu_table and other parameters
-    SparCpp(const OtuTable * _otu_table, unsigned int _iterations, unsigned int _exclusion_iterations, unsigned int _exclusion_threshold, gsl_rng * _p_rng);
+    SparCpp(const OtuTable * _otu_table, unsigned int _iterations, unsigned int _exclusion_iterations, unsigned int _exclusion_threshold, gsl_rng * _p_rng, unsigned int _threads);
 
     // Infer correlation and covariance for n iterations
     void infer_correlation_and_covariance();
