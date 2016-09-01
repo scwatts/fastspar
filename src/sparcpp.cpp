@@ -129,7 +129,7 @@ void SparCppIteration::calculate_log_ratio_variance() {
              // Add to matrix
              temp_variance(j, i) = col_variance;
          }
-     }
+    }
     // Reflect lower triangle to upper and move temp_variance to SparCppIteration.variance
     variance = arma::symmatl(temp_variance);
 }
@@ -144,7 +144,7 @@ void SparCppIteration::calculate_component_variance() {
     }
     arma::Col<double> variance_vector = arma::sum(variance_munge, 1);
     // Using double type as we'll need to get the inverse which fails when using an int mat
-    basis_variance = mod.i() * variance_vector;
+    basis_variance = arma::solve(mod, variance_vector, arma::solve_opts::fast);
     // Set variances less than 0 to minimum variance
     basis_variance(arma::find(basis_variance < 0)).fill(1e-4);
 }
