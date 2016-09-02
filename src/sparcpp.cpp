@@ -72,8 +72,11 @@ void SparCpp::infer_correlation_and_covariance() {
         }
 
         // Finally add the calculated correlation and covariances to a running vector
+#pragma omp critical
+	{
         correlation_vector.push_back(sparcpp_iteration.basis_correlation);
         covariance_vector.push_back(sparcpp_iteration.basis_covariance.diag());
+	}
     }
 }
 

@@ -49,7 +49,8 @@ void count_values_more_extreme(arma::Mat<double>& abs_observed_correlation,
     arma::Col<arma::uword> extreme_value_index = arma::find(abs_bootstrap_correlation >= abs_observed_correlation);
     // For each more extreme value, increment count in extreme_value_counts
     for (arma::Col<arma::uword>::iterator it = extreme_value_index.begin(); it != extreme_value_index.end(); ++it) {
-        extreme_value_counts(*it) += 1;
+#pragma omp atomic
+        ++extreme_value_counts(*it);
     }
 
 }
@@ -393,9 +394,11 @@ int main(int argc, char **argv) {
             if (otu_pair_possible_permutations <= 10000 ) {
                 // Exact p-value calculation
                 // If fewer than 10000 possible permutations, we can safely cast double to int
+#pragma omp atomic write
                 pvalues(i, j) = calculate_exact_pvalue((int)otu_pair_possible_permutations, extreme_value_counts(i, j), permutations);
             } else {
                 // Integral approximation for p-value calculation
+#pragma omp atomic write
                 pvalues(i, j) = calculate_pvalue_with_integral_estimate(otu_pair_possible_permutations, extreme_value_counts(i, j), permutations);
             }
         }
