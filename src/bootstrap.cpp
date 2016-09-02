@@ -1,4 +1,5 @@
 #include <string>
+#include <thread>
 #include <time.h>
 #include <vector>
 
@@ -39,24 +40,30 @@ void printHelp() {
     std::cerr << "Usage:" << std::endl;
     std::cerr << "  bootstraps --otu_table <of> --number <n> --prefix <p>" << std::endl;
     std::cerr << std::endl;
-    std::cerr << "  -t/--otu_table <of>   OTU input table" << std::endl;
+    std::cerr << "  -c/--otu_table <of>   OTU input table" << std::endl;
     std::cerr << "  -n/--number <n>       Number of bootstrap samples to generate" << std::endl;
     std::cerr << "  -p/--prefix <p>       Prefix out bootstrap output files" << std::endl;
-
+    std::cerr << std::endl;
+    std::cerr << "Options:" << std::endl;
+    std::cerr << "  -t <th>, --threads <th>" << std::endl;
+    std::cerr << "                        Number of threads (1 default)" << std::endl;
 }
 
 
 int main(int argc, char **argv) {
     // Define some variables
-    int bootstrap_number = 0;
+    unsigned int bootstrap_number = 0;
     std::string otu_filename;
     std::string bootstrap_prefix;
+    unsigned int threads = 1;
+    unsigned int available_threads = std::thread::hardware_concurrency();
 
     // Commandline arguments (for getlongtops)
     struct option long_options[] =
         {
-            {"otu_table", required_argument, NULL, 't'},
+            {"otu_table", required_argument, NULL, 'c'},
             {"number", required_argument, NULL, 'n'},
+            {"threads", required_argument, NULL, 't'},
             {"prefix", required_argument, NULL, 'p'},
             {"help", no_argument, NULL, 'h'},
             {NULL, 0, 0, 0}
@@ -66,7 +73,7 @@ int main(int argc, char **argv) {
     if (argc < 2) {
         printHelp();
         std::cerr << std::endl << argv[0];
-        std::cerr << ": error: options -t/--otu_table, -n/--number, and -p/--prefix are required" << std::endl;
+        std::cerr << ": error: options -c/--otu_table, -n/--number, and -p/--prefix are required" << std::endl;
         exit(0);
     }
 
@@ -74,13 +81,13 @@ int main(int argc, char **argv) {
     while (1) {
         int option_index = 0;
         int c;
-        c = getopt_long (argc, argv, "ht:p:n:", long_options, &option_index);
+        c = getopt_long (argc, argv, "hc:p:n:t:", long_options, &option_index);
         if (c == -1) {
             break;
         }
         switch(c) {
             // TODO: do we need case(0)?
-            case 't':
+            case 'c':
                 otu_filename = optarg;
                 break;
             case 'p':
@@ -88,6 +95,9 @@ int main(int argc, char **argv) {
                 break;
             case 'n':
                 bootstrap_number = get_int_from_char(optarg);
+                break;
+            case 't':
+                threads = get_int_from_char(optarg);
                 break;
             case 'h':
                 printHelp();
@@ -101,11 +111,12 @@ int main(int argc, char **argv) {
     if (optind < argc){
         std::cerr << argv[0] << " invalid argument: " << argv[optind++] << std::endl;
     }
+
     // Make sure we have filenames and parameters
     if (otu_filename.empty()) {
         printHelp();
         std::cerr << std::endl << argv[0];
-        std::cerr << ": error: argument -t/--otu_table is required" << std::endl;
+        std::cerr << ": error: argument -c/--otu_table is required" << std::endl;
         exit(1);
     }
     if (bootstrap_prefix.empty()) {
@@ -120,6 +131,20 @@ int main(int argc, char **argv) {
         std::cerr << ": error: argument -n/--number is required" << std::endl;
         exit(1);
     }
+
+    // Check if have a reasonable number of threads
+    if (threads < 1) {
+        std::cerr << "Must have at least 1 thread" << std::endl;
+        exit(1);
+    }
+    if (available_threads > 1 && threads > available_threads) {
+        std::cerr << "The machine only has " << available_threads << " threads, you asked for " << threads << std::endl;
+        exit(1);
+    } else if (threads > 64) {
+        std::cerr << "Current hardcode limit of 64 threads" << std::endl;
+        exit(1);
+    }
+
     // Check that the OTU file exists
     std::ifstream otu_file;
     otu_file.open(otu_filename);
@@ -138,15 +163,19 @@ int main(int argc, char **argv) {
     gsl_rng_set(p_rng, time(NULL));
 
     // Load the OTU table from file
+    printf("Loading OTU count table\n");
     struct OtuTable otu_table;
     otu_table.load_otu_file(otu_filename);
 
     // Get specified number of bootstrap samples
-    for (int i = 0; i < bootstrap_number; ++i) {
+    printf("Generating bootstrapped samples\n");
+#pragma omp parallel for num_threads(threads) schedule(static, 1)
+    for (unsigned int i = 0; i < bootstrap_number; ++i) {
         // Get the bootstrap
         arma::Mat<double> bootstrap = get_bootstrap(otu_table, p_rng);
 
         // Transpose matrix in place before writing out
+        printf("\tWriting out bootstrapped %i\n", i);
         arma::inplace_trans(bootstrap);
         std::string bootstrap_filename = bootstrap_prefix + "_"  + std::to_string(i) + ".tsv";
         write_out_square_otu_matrix(bootstrap, otu_table, bootstrap_filename);
