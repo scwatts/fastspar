@@ -1,5 +1,5 @@
 # SparCpp
-SparCpp is a c++ implementation of the SparCC algorithm published here: Friedman, J. & Alm, E. J. Inferring correlation networks from genomic survey data. PLoS Comput. Biol. 8, e1002687 (2012). There is an approximately 50x speed up compared to the original Python2 implementation and greatly reduced memory usage.
+SparCpp is a c++ implementation of the SparCC algorithm published here: Friedman, J. & Alm, E. J. Inferring correlation networks from genomic survey data. PLoS Comput. Biol. 8, e1002687 (2012). SparCpp is up to several thousand times faster than the original Python2 implementation and uses much less memory.
 
 Many of the processes of SparCpp were ported from original SparCC implementation found here: https://bitbucket.org/yonatanf/sparcc
 
@@ -79,6 +79,13 @@ parallel sparcpp --otu_table {} --correlation bootstrap_correlation/cor_{/} --co
 From these correlations, the p-values are then calculated:
 ```bash
 sparcpp_exactpvalues --otu_table fake_data.txt --correlation median_correlation.tsv --prefix bootstrap_correlation/cor_fake_data_ --permutations 1000 --outfile pvalues.tsv
+```
+
+
+### Threading
+If SparCpp is compiled with OpenMP, threading can be used by invoking `--threads <thread_number>` at the command line for several tools:
+```bash
+sparcpp --otu_table fake_data.txt --correlation median_correlation.tsv --covariance median_covariance.tsv --iterations 10000 --threads 32
 ```
 
 
