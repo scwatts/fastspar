@@ -1,4 +1,5 @@
 #include <string>
+#include <thread>
 #include <time.h>
 #include <vector>
 
@@ -13,21 +14,24 @@
 
 
 // Initialise a SparCpp object (must be parsed a pointer to an OTU table struct and other paramters)
-SparCpp::SparCpp(const OtuTable * otu_table, int iterations, int exclusion_iterations, int exclusion_threshold, gsl_rng * p_rng) {
-    SparCpp::otu_table = otu_table;
-    SparCpp::iterations = iterations;
-    SparCpp::exclusion_iterations = exclusion_iterations;
-    SparCpp::exclusion_threshold = exclusion_threshold;
-    SparCpp::p_rng = p_rng;
+SparCpp::SparCpp(const OtuTable * _otu_table, unsigned int _iterations, unsigned int _exclusion_iterations, unsigned int _exclusion_threshold, gsl_rng * _p_rng, unsigned int _threads) {
+    otu_table = _otu_table;
+    iterations = _iterations;
+    exclusion_iterations = _exclusion_iterations;
+    exclusion_threshold = _exclusion_threshold;
+    p_rng = _p_rng;
+    threads = _threads;
 }
 
 
 // Run the SparCpp algorithm
 void SparCpp::infer_correlation_and_covariance() {
-    for (int i = 0; i < iterations; ++i) {
+
+#pragma omp parallel for num_threads(threads) schedule(static, 1)
+    for (unsigned int i = 0; i < iterations; ++i) {
         // Create a SparCppIteration object
         SparCppIteration sparcpp_iteration(otu_table, exclusion_iterations, exclusion_threshold);
-        std::cout << "Running iteration: " << i + 1 << std::endl;
+        printf("\tRunning iteration: %i\n", i + 1);
 
         // TODO: Refactor as a method for SparCppIterations
 
@@ -42,7 +46,14 @@ void SparCpp::infer_correlation_and_covariance() {
         sparcpp_iteration.calculate_correlation_and_corvariance();
 
         // STEP 4: Exclude highly correlated pairs, repeating correlation/ covariance calculation each iteration
-        for (int j = 0; j < exclusion_iterations; ++j) {
+        for (unsigned int j = 0; j < exclusion_iterations; ++j) {
+            // The SparCC algorithm is only valid for 4 or more components, after exclusion if we
+            // have left with fewer than 3 we exit early
+            if (sparcpp_iteration.components_remaining < 4) {
+                fprintf(stderr, "Exclusion iterations ending early; we need at least 4 non-excluded pairs for SparCC\n");
+                break;
+            }
+
             // Find and exclude pairs
             sparcpp_iteration.find_and_exclude_pairs(exclusion_threshold);
             // Recalculate component variation after pair exclusion
@@ -61,22 +72,26 @@ void SparCpp::infer_correlation_and_covariance() {
         }
 
         // Finally add the calculated correlation and covariances to a running vector
+#pragma omp critical
+	{
         correlation_vector.push_back(sparcpp_iteration.basis_correlation);
         covariance_vector.push_back(sparcpp_iteration.basis_covariance.diag());
+	}
     }
 }
 
 
 // Initialise a SparCpp object (must be parsed a pointer to an OTU table struct and other paramters)
-SparCppIteration::SparCppIteration(const OtuTable * otu_table, int exclusion_iterations, int exclusion_threshold) {
-    SparCppIteration::otu_table = otu_table;
-    SparCppIteration::exclusion_iterations = exclusion_iterations;
-    SparCppIteration::exclusion_threshold = exclusion_threshold;
+SparCppIteration::SparCppIteration(const OtuTable * _otu_table, unsigned int _exclusion_iterations, unsigned int _exclusion_threshold) {
+    otu_table = _otu_table;
+    exclusion_iterations = _exclusion_iterations;
+    exclusion_threshold = _exclusion_threshold;
+    components_remaining = otu_table->otu_number;
 
     // We also have to setup the mod matrix
     std::vector<double> mod_diag(otu_table->otu_number, otu_table->otu_number - 2);
-    arma::Mat<double> mod = arma::diagmat((arma::Col<double>) mod_diag);
-    SparCppIteration::mod = mod + 1;
+    arma::Mat<double> _mod = arma::diagmat((arma::Col<double>) mod_diag);
+    mod = _mod + 1;
 }
 
 
@@ -104,18 +119,22 @@ void SparCppIteration::estimate_component_fractions(gsl_rng * p_rng) {
 
 
 void SparCppIteration::calculate_log_ratio_variance() {
-    // TODO: Given this is a square mat, check that we're required to iterate over all as in SparCC (thinking only half)
-    // TODO: !IMPORTANT we're not assigning all elements in the variance matrix, is this correct?
+    // Log fraction matrix
+    arma::Mat<double> log_fractions = arma::log(fractions);
+
+    // Create zero-filled matrix for variance and get all combinations of column variance
     arma::Mat<double> temp_variance(fractions.n_cols, fractions.n_cols, arma::fill::zeros);
     for (unsigned int i = 0; i < fractions.n_cols - 1; ++i) {
-        for (unsigned int j = i + 1; j < fractions.n_cols; ++j) {
-            arma::Col<double> log_ratio_col = arma::log(fractions.col(i) / fractions.col(j));
-            double col_variance = arma::var(log_ratio_col);
-            temp_variance(i, j) = temp_variance(j, i) = col_variance;
-        }
+         for (unsigned int j = i + 1; j < fractions.n_cols; ++j) {
+             // Calculate variance of log fractions
+             double col_variance = arma::var(log_fractions.col(i) - log_fractions.col(j));
+
+             // Add to matrix
+             temp_variance(j, i) = col_variance;
+         }
     }
-    // Move temp_variance to SparCppIteration.variance
-    variance = std::move(temp_variance);
+    // Reflect lower triangle to upper and move temp_variance to SparCppIteration.variance
+    variance = arma::symmatl(temp_variance);
 }
 
 
@@ -128,7 +147,7 @@ void SparCppIteration::calculate_component_variance() {
     }
     arma::Col<double> variance_vector = arma::sum(variance_munge, 1);
     // Using double type as we'll need to get the inverse which fails when using an int mat
-    basis_variance = mod.i() * variance_vector;
+    basis_variance = arma::solve(mod, variance_vector, arma::solve_opts::fast);
     // Set variances less than 0 to minimum variance
     basis_variance(arma::find(basis_variance < 0)).fill(1e-4);
 }
@@ -187,15 +206,17 @@ void SparCppIteration::find_and_exclude_pairs(float threshold) {
             unsigned int diagonal_idx = *it % otu_table->otu_number;
             mod.diag()[diagonal_idx] -= 1;
             // TODO: Check if it's quicker to select all elements at once and then subtract one
-            mod(*it) -= 1;
+            --mod(*it);
             // Also add excluded indices to running list
             excluded.push_back(*it);
+            // Finally decrease remaining component count
+            --components_remaining;
         }
     }
 }
 
 
-void SparCpp::calulcate_median_correlation_and_covariance() {
+void SparCpp::calculate_median_correlation_and_covariance() {
     // Get median of all i,j elements across the iterations for correlation
     // Add correlation matrices to arma Cube so that we can get views of all i, j of each matrix
     arma::Cube<double> correlation_cube(otu_table->otu_number, otu_table->otu_number, correlation_vector.size());
@@ -250,36 +271,40 @@ void SparCpp::calulcate_median_correlation_and_covariance() {
 
 void printHelp() {
     std::cerr << "Program: SparCpp (c++ implementation of SparCC)" << std::endl;
-    std::cerr << "Version: 0.1a" << std::endl;
+    std::cerr << "Version: 0.1" << std::endl;
     std::cerr << "Contact: Stephen Watts (s.watts2@student.unimelb.edu.au)" << std::endl;
     std::cerr << std::endl;
     std::cerr << "Usage:" << std::endl;
     std::cerr << "  sparcpp [options] --otu_table <of> --correlation <rf> --covariance <vf>" << std::endl;
     std::cerr << std::endl;
-    std::cerr << "  -t <of>, --otu_table <of>" << std::endl;
-    std::cerr << "                OTU input table" << std::endl;
+    std::cerr << "  -c <of>, --otu_table <of>" << std::endl;
+    std::cerr << "                OTU input OTU count table" << std::endl;
     std::cerr << "  -r <rf>, -correlation <rf>" << std::endl;
     std::cerr << "                Correlation output table" << std::endl;
     std::cerr << "  -v <vf>, --covariance <vf>" << std::endl;
     std::cerr << "                Covariance output table" << std::endl;
     std::cerr << std::endl;
     std::cerr << "Options:" << std::endl;
-    std::cerr << "  -h, --help    show this help message and exit" << std::endl;
+    std::cerr << "  -h, --help    Show this help message and exit" << std::endl;
     std::cerr << "  -i <int>, --iterations <int>" << std::endl;
     std::cerr << "                Number of interations to perform (50 default)" << std::endl;
     std::cerr << "  -x <int>, --exclusion_iterations <int>" << std::endl;
     std::cerr << "                Number of exclusion interations to perform (10 default)" << std::endl;
-    std::cerr << "  -t <float>, --exclusion_iterations <float>" << std::endl;
+    std::cerr << "  -e <float>, --exclusion_iterations <float>" << std::endl;
     std::cerr << "                Correlation strength exclusion threshold (0.1 default)" << std::endl;
+    std::cerr << "  -t <int>, --threads <int>" << std::endl;
+    std::cerr << "                Number of threads (1 default)" << std::endl;
 
 }
 
 
 int main(int argc, char **argv) {
     // Set some default parameters
-    int iterations = 20;
-    int exclude_iterations = 10;
+    unsigned int iterations = 20;
+    unsigned int exclude_iterations = 10;
     float threshold = 0.1;
+    unsigned int threads = 1;
+    unsigned int available_threads = std::thread::hardware_concurrency();
 
     // Declare some important variables
     std::string otu_filename;
@@ -289,12 +314,13 @@ int main(int argc, char **argv) {
     // Commandline arguments (for getlongtops)
     struct option long_options[] =
         {
-            {"otu_table", required_argument, NULL, 't'},
+            {"otu_table", required_argument, NULL, 'c'},
             {"correlation", required_argument, NULL, 'r'},
             {"covariance", required_argument, NULL, 'v'},
             {"iterations", required_argument, NULL, 'i'},
             {"exclude_iterations", required_argument, NULL, 'x'},
             {"threshold", required_argument, NULL, 'e'},
+            {"threads", required_argument, NULL, 't'},
             {"help", no_argument, NULL, 'h'},
             {NULL, 0, 0, 0}
         };
@@ -303,7 +329,7 @@ int main(int argc, char **argv) {
     if (argc < 2) {
         printHelp();
         std::cerr << std::endl << argv[0];
-        std::cerr << ": error: options -t/--otu_table, -r/--correlation, and -v/--covariance are required" << std::endl;
+        std::cerr << ": error: options -c/--otu_table, -r/--correlation, and -v/--covariance are required" << std::endl;
         exit(0);
     }
 
@@ -311,13 +337,13 @@ int main(int argc, char **argv) {
     while (1) {
         int option_index = 0;
         int c;
-        c = getopt_long (argc, argv, "ht:r:v:i:x:e:", long_options, &option_index);
+        c = getopt_long (argc, argv, "hc:r:v:i:x:e:t:", long_options, &option_index);
         if (c == -1) {
             break;
         }
         switch(c) {
             // TODO: do we need case(0)?
-            case 't':
+            case 'c':
                 otu_filename = optarg;
                 break;
             case 'r':
@@ -335,6 +361,9 @@ int main(int argc, char **argv) {
             case 'e':
                 threshold = get_float_from_char(optarg);
                 break;
+            case 't':
+                threads = get_int_from_char(optarg);
+                break;
             case 'h':
                 printHelp();
                 exit(0);
@@ -346,11 +375,12 @@ int main(int argc, char **argv) {
     if (optind < argc){
         std::cerr << argv[0] << " invalid argument: " << argv[optind++] << std::endl;
     }
+
     // Make sure we have filenames
     if (otu_filename.empty()) {
         printHelp();
         std::cerr << std::endl << argv[0];
-        std::cerr << ": error: argument -t/--otu_table is required" << std::endl;
+        std::cerr << ": error: argument -c/--otu_table is required" << std::endl;
         exit(1);
     }
     if (correlation_filename.empty()) {
@@ -365,11 +395,26 @@ int main(int argc, char **argv) {
         std::cerr << ": error: argument -v/--covariance is required" << std::endl;
         exit(1);
     }
+
     // Ensure threshold is less than 100
     if (threshold > 1) {
         std::cerr << "Threshold cannot be greather than 1.0\n";
         exit(1);
     }
+
+    // Check if have a reasonable number of threads
+    if (threads < 1) {
+        std::cerr << "Must have at least 1 thread" << std::endl;
+        exit(1);
+    }
+    if (available_threads > 1 && threads > available_threads) {
+        std::cerr << "The machine only has " << available_threads << " threads, you asked for " << threads << std::endl;
+        exit(1);
+    } else if (threads > 64) {
+        std::cerr << "Current hardcode limit of 64 threads" << std::endl;
+        exit(1);
+    }
+
     // Check that the OTU file exists
     std::ifstream otu_file;
     otu_file.open(otu_filename);
@@ -391,16 +436,25 @@ int main(int argc, char **argv) {
     struct OtuTable otu_table;
     otu_table.load_otu_file(otu_filename);
 
+    // Make sure we have at least 4 components to run SparCC
+    if (otu_table.otu_number < 4) {
+        fprintf(stderr, "The SparCC algorithm requires at least 4 components to run\n");
+        exit(0);
+    }
+
     // Initialise a SparCpp object
-    SparCpp sparcpp(&otu_table, iterations, exclude_iterations, threshold, p_rng);
+    SparCpp sparcpp(&otu_table, iterations, exclude_iterations, threshold, p_rng, threads);
 
     // Run SparCpp iterations
+    printf("Running SparCC iterations\n");
     sparcpp.infer_correlation_and_covariance();
 
     // Calculate the final SparCpp correlation and covariances
-    sparcpp.calulcate_median_correlation_and_covariance();
+    printf("Calculating final SparCC correlations and covariances\n");
+    sparcpp.calculate_median_correlation_and_covariance();
 
     // Write median correlation and covariance matrices
+    printf("Writing out median correlation and covariance matrices\n");
     write_out_square_otu_matrix(sparcpp.median_correlation, otu_table, correlation_filename);
     write_out_square_otu_matrix(sparcpp.median_covariance, otu_table, covariance_filename);
 

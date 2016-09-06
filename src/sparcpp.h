@@ -15,12 +15,15 @@
 
 struct SparCpp {
     // Some algorithm parameters
-    int iterations;
-    int exclusion_iterations;
-    int exclusion_threshold;
+    unsigned int iterations;
+    unsigned int exclusion_iterations;
+    unsigned int exclusion_threshold;
 
     // RNG
     gsl_rng * p_rng;
+
+    // Threads to use during iteration
+    unsigned int threads;
 
     // Filenames
     std::string otu_filename;
@@ -40,29 +43,30 @@ struct SparCpp {
 
 
     // Construct SparCpp with a given otu_table and other parameters
-    SparCpp(const OtuTable * otu_table, int iterations, int exclusion_iterations, int exclusion_threshold, gsl_rng * p_rng);
+    SparCpp(const OtuTable * _otu_table, unsigned int _iterations, unsigned int _exclusion_iterations, unsigned int _exclusion_threshold, gsl_rng * _p_rng, unsigned int _threads);
 
     // Infer correlation and covariance for n iterations
     void infer_correlation_and_covariance();
 
     // Calculate the final correlation and covariance for OTUs
-    void calulcate_median_correlation_and_covariance();
+    void calculate_median_correlation_and_covariance();
 };
 
 
 struct SparCppIteration {
     // Some variables
     const OtuTable * otu_table;
-    int exclusion_iterations;
-    int exclusion_threshold;
+    unsigned int exclusion_iterations;
+    unsigned int exclusion_threshold;
 
     // Estimated fractions of OTUs
     arma::Mat<double> fractions;
     // Variance of estimated OTU fractions
     arma::Mat<double> variance;
 
-    // List of highly OTU pairs excluded in this iteration
+    // List of highly OTU pairs excluded in this iteration and number of components remaining
     std::vector<arma::uword> excluded;
+    unsigned int components_remaining;
 
     // Basis variance vector
     arma::Col<double> basis_variance;
@@ -75,7 +79,7 @@ struct SparCppIteration {
 
 
     // Construct SparCppIterations with a given otu_table and other parameters
-    SparCppIteration(const OtuTable * otu_table, int exclusion_iterations, int exclusion_threshold);
+    SparCppIteration(const OtuTable * _otu_table, unsigned int _exclusion_iterations, unsigned int _exclusion_threshold);
 
     // Estimates component fraction of all OTUs across samples using a dirichlet distribution
     void estimate_component_fractions(gsl_rng * p_rng);
