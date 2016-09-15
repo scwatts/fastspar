@@ -337,6 +337,9 @@ int main(int argc, char **argv) {
 	    exit(0);
     }
 
+    // OpenMP function from omp.h. This sets the number of threads in a more reliable way but also ignores OMP_NUM_THREADS
+    omp_set_num_threads(threads);
+
     // Read in otu tables (used to calculate total possible permutations)
     printf("Reading in OTU count table\n");
     struct OtuTable otu_table;
@@ -351,7 +354,7 @@ int main(int argc, char **argv) {
     printf("Reading in %zu bootstrap correlations\n", bs_cor_paths.size());
     arma::Mat<int> extreme_value_counts(otu_table.otu_number, otu_table.otu_number, arma::fill::zeros);
 
-#pragma omp parallel for num_threads(threads) schedule(static, 1)
+#pragma omp parallel for schedule(static, 1)
     for (int unsigned i = 0; i < bs_cor_paths.size(); ++i) {
         printf("\tBootstrap correlation %i: %s\n", i, bs_cor_paths[i].c_str());
         // Load the bootstrap correlation and get absolute values
@@ -383,7 +386,7 @@ int main(int argc, char **argv) {
     printf("Calculating the %i p-values\n", otu_table.otu_number*otu_table.otu_number);
     arma::Mat<double> pvalues(otu_table.otu_number, otu_table.otu_number, arma::fill::zeros);
 
-#pragma omp parallel for num_threads(threads) schedule(static, 1)
+#pragma omp parallel for schedule(static, 1)
     for (int i = 0; i < otu_table.otu_number; ++i) {
         printf("\tCalculating p-values for row %i with %s\n", i, otu_table.otu_ids[i].c_str());
         for (int j = 0; j < otu_table.otu_number; ++j) {

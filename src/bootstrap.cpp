@@ -154,6 +154,9 @@ int main(int argc, char **argv) {
         exit(1);
     }
 
+    // OpenMP function from omp.h. This sets the number of threads in a more reliable way but also ignores OMP_NUM_THREADS
+    omp_set_num_threads(threads);
+
     // Set up rng environment and seed
     const gsl_rng_type * rng_type;
     gsl_rng_env_setup();
@@ -169,7 +172,7 @@ int main(int argc, char **argv) {
 
     // Get specified number of bootstrap samples
     printf("Generating bootstrapped samples\n");
-#pragma omp parallel for num_threads(threads) schedule(static, 1)
+#pragma omp parallel for schedule(static, 1)
     for (unsigned int i = 0; i < bootstrap_number; ++i) {
         // Get the bootstrap
         arma::Mat<double> bootstrap = get_bootstrap(otu_table, p_rng);

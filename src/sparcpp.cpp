@@ -27,7 +27,7 @@ SparCpp::SparCpp(const OtuTable * _otu_table, unsigned int _iterations, unsigned
 // Run the SparCpp algorithm
 void SparCpp::infer_correlation_and_covariance() {
 
-#pragma omp parallel for num_threads(threads) schedule(static, 1)
+#pragma omp parallel for schedule(static, 1)
     for (unsigned int i = 0; i < iterations; ++i) {
         // Create a SparCppIteration object
         SparCppIteration sparcpp_iteration(otu_table, exclusion_iterations, exclusion_threshold);
@@ -423,6 +423,9 @@ int main(int argc, char **argv) {
         std::cerr << ": error: OTU table file " << otu_filename << " does not exist" << std::endl;
         exit(1);
     }
+
+    // OpenMP function from omp.h. This sets the number of threads in a more reliable way but also ignores OMP_NUM_THREADS
+    omp_set_num_threads(threads);
 
     // Set up rng environment and seed
     const gsl_rng_type * rng_type;
