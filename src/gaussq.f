@@ -308,8 +308,16 @@ c                     determined after 30 iterations.
 c
 c     ------------------------------------------------------------------
 c
-      integer i, j, k, l, m, n, ii, mml, ierr
-      real*8 d(n), e(n), z(n), b, c, f, g, p, r, s, machep
+c     Defining the c++ interface; 'target' indicates an argument has a
+c     a pointer attribute
+      use iso_c_binding
+      integer (c_int), target :: n
+      integer (c_int), target :: ierr
+      real (c_double), target :: d(n), e(n), z(n)
+
+
+      integer i, j, k, l, m, ii, mml
+      real*8 b, c, f, g, p, r, s, machep
 C      real*8 dsqrt, dabs, dsign, d1mach
       real*8 dsqrt, dabs, dsign
 c
