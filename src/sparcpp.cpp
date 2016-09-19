@@ -175,7 +175,7 @@ void SparCppIteration::calculate_correlation_and_corvariance(){
                     basis_cor_el = 1;
                 }
                 // Recalculate correlation after setting cor
-                double basis_cov_el = basis_cor_el * sqrt(basis_variance(i)) * sqrt(basis_variance(j));
+                basis_cov_el = basis_cor_el * sqrt(basis_variance(i)) * sqrt(basis_variance(j));
             }
             // TODO: Check if we can avoid repetition here as well
             // Set basis_correlation and basis_covariance matrices
