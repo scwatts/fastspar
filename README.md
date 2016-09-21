@@ -9,11 +9,23 @@ SparCpp is currently in development and may lack certain features expected in co
 
 
 ## Installing
-SparCpp has been written using c++11 with Armadillo, GNU Scientific Library (GSL), OpenMP, and getopt. Compilation will require these libraries. Further, the exact p-value executable requires compilation of FORTRAN code.
+SparCpp can be installed using a package containing pre-compiled binaries or installed from source. If running Ubuntu, it is recommended you install using the package.
 
 
-### Prerequisities
-For compilation the following is required:
+### Ubuntu package
+If you're running Ubuntu 14.04+, many dependencies will already be meet. The remaining can be satisfied by installing the follow packages:
+```bash
+sudo apt-get install libgomp1 libgsl0ldbl
+```
+
+The Ubuntu deb package can be obtained from the github release page. After downloading installation can be completed by:
+```bash
+sudo dpkg -i sparcpp_0.0.1-1_amd64.deb
+```
+
+
+### From source
+If you're not on Ubuntu, you'll have to compile from source. Compilation requires these libraries and software:
 ```
 C++11
 Gfortran
@@ -24,18 +36,15 @@ GNU getopt
 GNU make
 ```
 
-
-### Installing
-To compile SparCpp executables, clone this repository and run GNU make:
-
+After meet the above requirements, install SparCpp from source can be done with these commands:
 ```bash
 git clone https://github.com/scwatts/sparcpp.git
 cd sparcpp
-./configure
+./configure --prefix=/usr/
 make
 make install
 ```
-Once done, the SparCpp executables will be in PATH
+Once done, the SparCpp executables can be run from the command line
 
 
 ## Usage
