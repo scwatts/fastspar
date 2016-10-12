@@ -9,12 +9,12 @@
 #include <getopt.h>
 
 
-#include "sparcpp.h"
+#include "fastspar.h"
 #include "common.h"
 
 
-// Initialise a SparCpp object (must be parsed a pointer to an OTU table struct and other paramters)
-SparCpp::SparCpp(const OtuTable * _otu_table, unsigned int _iterations, unsigned int _exclusion_iterations, unsigned int _exclusion_threshold, gsl_rng * _p_rng, unsigned int _threads) {
+// Initialise a FastSpar object (must be parsed a pointer to an OTU table struct and other paramters)
+FastSpar::FastSpar(const OtuTable * _otu_table, unsigned int _iterations, unsigned int _exclusion_iterations, unsigned int _exclusion_threshold, gsl_rng * _p_rng, unsigned int _threads) {
     otu_table = _otu_table;
     iterations = _iterations;
     exclusion_iterations = _exclusion_iterations;
@@ -24,48 +24,48 @@ SparCpp::SparCpp(const OtuTable * _otu_table, unsigned int _iterations, unsigned
 }
 
 
-// Run the SparCpp algorithm
-void SparCpp::infer_correlation_and_covariance() {
+// Run the FastSpar algorithm
+void FastSpar::infer_correlation_and_covariance() {
 
 #pragma omp parallel for schedule(static, 1)
     for (unsigned int i = 0; i < iterations; ++i) {
-        // Create a SparCppIteration object
-        SparCppIteration sparcpp_iteration(otu_table, exclusion_iterations, exclusion_threshold);
+        // Create a FastSparIteration object
+        FastSparIteration fastspar_iteration(otu_table, exclusion_iterations, exclusion_threshold);
         printf("\tRunning iteration: %i\n", i + 1);
 
-        // TODO: Refactor as a method for SparCppIterations
+        // TODO: Refactor as a method for FastSparIterations
 
         // STEP 1: Estimate component fractions and get log ratio variance
-        sparcpp_iteration.estimate_component_fractions(p_rng);
-        sparcpp_iteration.calculate_log_ratio_variance();
+        fastspar_iteration.estimate_component_fractions(p_rng);
+        fastspar_iteration.calculate_log_ratio_variance();
 
         // STEP 2: Calculate component variation
-        sparcpp_iteration.calculate_component_variance();
+        fastspar_iteration.calculate_component_variance();
 
         // STEP 3: Calculate correlation and covariance from basis variation and estimated fractions
-        sparcpp_iteration.calculate_correlation_and_corvariance();
+        fastspar_iteration.calculate_correlation_and_corvariance();
 
         // STEP 4: Exclude highly correlated pairs, repeating correlation/ covariance calculation each iteration
         for (unsigned int j = 0; j < exclusion_iterations; ++j) {
             // The SparCC algorithm is only valid for 4 or more components, after exclusion if we
             // have left with fewer than 3 we exit early
-            if (sparcpp_iteration.components_remaining < 4) {
+            if (fastspar_iteration.components_remaining < 4) {
                 fprintf(stderr, "Exclusion iterations ending early; we need at least 4 non-excluded pairs for SparCC\n");
                 break;
             }
 
             // Find and exclude pairs
-            sparcpp_iteration.find_and_exclude_pairs(exclusion_threshold);
+            fastspar_iteration.find_and_exclude_pairs(exclusion_threshold);
             // Recalculate component variation after pair exclusion
-            sparcpp_iteration.calculate_component_variance();
+            fastspar_iteration.calculate_component_variance();
             // Recalculate correlation and covariance after pair exclusion
-            sparcpp_iteration.calculate_correlation_and_corvariance();
+            fastspar_iteration.calculate_correlation_and_corvariance();
         }
 
         // SparCC performs Pearson product-moment correlation coefficients (numpy.corrcoef) after apply a center
         // log ratio if the maximum correlation magnitude is greater than 1
         // TODO: Implement this (:
-        if (arma::abs(sparcpp_iteration.basis_correlation).max() > 1.0){
+        if (arma::abs(fastspar_iteration.basis_correlation).max() > 1.0){
             std::string error_str = "Input triggered condition to perform clr correlation, this is not yet implemented";
             std::cerr << error_str << std::endl;
 	    exit(0);
@@ -74,15 +74,15 @@ void SparCpp::infer_correlation_and_covariance() {
         // Finally add the calculated correlation and covariances to a running vector
 #pragma omp critical
 	{
-        correlation_vector.push_back(sparcpp_iteration.basis_correlation);
-        covariance_vector.push_back(sparcpp_iteration.basis_covariance.diag());
+        correlation_vector.push_back(fastspar_iteration.basis_correlation);
+        covariance_vector.push_back(fastspar_iteration.basis_covariance.diag());
 	}
     }
 }
 
 
-// Initialise a SparCpp object (must be parsed a pointer to an OTU table struct and other paramters)
-SparCppIteration::SparCppIteration(const OtuTable * _otu_table, unsigned int _exclusion_iterations, unsigned int _exclusion_threshold) {
+// Initialise a FastSpar object (must be parsed a pointer to an OTU table struct and other paramters)
+FastSparIteration::FastSparIteration(const OtuTable * _otu_table, unsigned int _exclusion_iterations, unsigned int _exclusion_threshold) {
     otu_table = _otu_table;
     exclusion_iterations = _exclusion_iterations;
     exclusion_threshold = _exclusion_threshold;
@@ -95,7 +95,7 @@ SparCppIteration::SparCppIteration(const OtuTable * _otu_table, unsigned int _ex
 }
 
 
-void SparCppIteration::estimate_component_fractions(gsl_rng * p_rng) {
+void FastSparIteration::estimate_component_fractions(gsl_rng * p_rng) {
     // TODO: check if it's more efficient to gather fractions and then init arma::Mat (instead of init elements)
     // Estimate fractions by drawing from dirichlet distribution
     arma::Mat<double> temp_fractions(otu_table->sample_number, otu_table->otu_number);
@@ -113,12 +113,12 @@ void SparCppIteration::estimate_component_fractions(gsl_rng * p_rng) {
         arma::Mat<double> estimated_fractions_row(theta, 1, otu_table->otu_number);
         temp_fractions.row(i) = estimated_fractions_row;
     }
-    // Move temp_fractions to SparCppIteration.factions
+    // Move temp_fractions to FastSparIteration.factions
     fractions = std::move(temp_fractions);
 }
 
 
-void SparCppIteration::calculate_log_ratio_variance() {
+void FastSparIteration::calculate_log_ratio_variance() {
     // Log fraction matrix
     arma::Mat<double> log_fractions = arma::log(fractions);
 
@@ -133,12 +133,12 @@ void SparCppIteration::calculate_log_ratio_variance() {
              temp_variance(j, i) = col_variance;
          }
     }
-    // Reflect lower triangle to upper and move temp_variance to SparCppIteration.variance
+    // Reflect lower triangle to upper and move temp_variance to FastSparIteration.variance
     variance = arma::symmatl(temp_variance);
 }
 
 
-void SparCppIteration::calculate_component_variance() {
+void FastSparIteration::calculate_component_variance() {
     // NOTE: We make a copy of the variance matrix here to restrict modifications outside this function
     arma::Mat<double> variance_munge = variance;
     // If any pairs have been excluded, set variance to zero
@@ -153,7 +153,7 @@ void SparCppIteration::calculate_component_variance() {
 }
 
 
-void SparCppIteration::calculate_correlation_and_corvariance(){
+void FastSparIteration::calculate_correlation_and_corvariance(){
     // TODO: Determine if basis_cor_el and basis_cov_el can all be calculated and then have arma::Mat initialised
     // Initialise matrices and set diagonals
     // TODO: We only need to set diagonal on final table (we otherwise set diag to zero then check for high correlates)
@@ -183,13 +183,13 @@ void SparCppIteration::calculate_correlation_and_corvariance(){
             temp_basis_covariance(i, j) = temp_basis_covariance(i, j) = basis_cov_el;
         }
     }
-    // Move temp_basis_correlation and temp_basis_covariance to SparCppIteration
+    // Move temp_basis_correlation and temp_basis_covariance to FastSparIteration
     basis_correlation = std::move(temp_basis_correlation);
     basis_covariance = std::move(temp_basis_covariance);
 }
 
 
-void SparCppIteration::find_and_exclude_pairs(float threshold) {
+void FastSparIteration::find_and_exclude_pairs(float threshold) {
     // NOTE: BasisResults are passed by value as we need to makes changes only in this function
     basis_correlation.diag().zeros();
     basis_correlation = arma::abs(basis_correlation);
@@ -216,7 +216,7 @@ void SparCppIteration::find_and_exclude_pairs(float threshold) {
 }
 
 
-void SparCpp::calculate_median_correlation_and_covariance() {
+void FastSpar::calculate_median_correlation_and_covariance() {
     // Get median of all i,j elements across the iterations for correlation
     // Add correlation matrices to arma Cube so that we can get views of all i, j of each matrix
     arma::Cube<double> correlation_cube(otu_table->otu_number, otu_table->otu_number, correlation_vector.size());
@@ -263,19 +263,19 @@ void SparCpp::calculate_median_correlation_and_covariance() {
     arma::Mat<double> temp_median_covariance(otu_table->otu_number, otu_table->otu_number);
     temp_median_covariance = temp_median_correlation % arma::pow(median_covariance_x, 0.5) % arma::pow(median_covariance_y, 0.5);
 
-    // Move the temp matrices to SparCpp
+    // Move the temp matrices to FastSpar
     median_correlation = std::move(temp_median_correlation);
     median_covariance = std::move(temp_median_covariance);
 }
 
 
 void printHelp() {
-    std::cerr << "Program: SparCpp (c++ implementation of SparCC)" << std::endl;
+    std::cerr << "Program: FastSpar (c++ implementation of SparCC)" << std::endl;
     std::cerr << "Version: 0.1" << std::endl;
     std::cerr << "Contact: Stephen Watts (s.watts2@student.unimelb.edu.au)" << std::endl;
     std::cerr << std::endl;
     std::cerr << "Usage:" << std::endl;
-    std::cerr << "  sparcpp [options] --otu_table <of> --correlation <rf> --covariance <vf>" << std::endl;
+    std::cerr << "  fastspar [options] --otu_table <of> --correlation <rf> --covariance <vf>" << std::endl;
     std::cerr << std::endl;
     std::cerr << "  -c <of>, --otu_table <of>" << std::endl;
     std::cerr << "                OTU input OTU count table" << std::endl;
@@ -445,21 +445,21 @@ int main(int argc, char **argv) {
         exit(0);
     }
 
-    // Initialise a SparCpp object
-    SparCpp sparcpp(&otu_table, iterations, exclude_iterations, threshold, p_rng, threads);
+    // Initialise a FastSpar object
+    FastSpar fastspar(&otu_table, iterations, exclude_iterations, threshold, p_rng, threads);
 
-    // Run SparCpp iterations
+    // Run FastSpar iterations
     printf("Running SparCC iterations\n");
-    sparcpp.infer_correlation_and_covariance();
+    fastspar.infer_correlation_and_covariance();
 
-    // Calculate the final SparCpp correlation and covariances
+    // Calculate the final FastSpar correlation and covariances
     printf("Calculating final SparCC correlations and covariances\n");
-    sparcpp.calculate_median_correlation_and_covariance();
+    fastspar.calculate_median_correlation_and_covariance();
 
     // Write median correlation and covariance matrices
     printf("Writing out median correlation and covariance matrices\n");
-    write_out_square_otu_matrix(sparcpp.median_correlation, otu_table, correlation_filename);
-    write_out_square_otu_matrix(sparcpp.median_covariance, otu_table, covariance_filename);
+    write_out_square_otu_matrix(fastspar.median_correlation, otu_table, correlation_filename);
+    write_out_square_otu_matrix(fastspar.median_covariance, otu_table, covariance_filename);
 
     // Free rng memory
     gsl_rng_free(p_rng);

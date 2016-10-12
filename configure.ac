@@ -1,4 +1,4 @@
-AC_INIT([sparcpp], [0.1], [step.wat@gmail.com])
+AC_INIT([fastspar], [0.1], [step.wat@gmail.com])
 AM_INIT_AUTOMAKE([foreign -Wall -Werror])
 # Check for c++ and fortran compilers
 AC_PROG_CXX

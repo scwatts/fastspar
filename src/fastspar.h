@@ -1,5 +1,5 @@
-#ifndef __SPARCPP_H__
-#define __SPARCPP_H__
+#ifndef __FASTSPAR_H__
+#define __FASTSPAR_H__
 
 
 #include <vector>
@@ -13,7 +13,7 @@
 #include "common.h"
 
 
-struct SparCpp {
+struct FastSpar {
     // Some algorithm parameters
     unsigned int iterations;
     unsigned int exclusion_iterations;
@@ -42,8 +42,8 @@ struct SparCpp {
     arma::Mat<double> median_covariance;
 
 
-    // Construct SparCpp with a given otu_table and other parameters
-    SparCpp(const OtuTable * _otu_table, unsigned int _iterations, unsigned int _exclusion_iterations, unsigned int _exclusion_threshold, gsl_rng * _p_rng, unsigned int _threads);
+    // Construct FastSpar with a given otu_table and other parameters
+    FastSpar(const OtuTable * _otu_table, unsigned int _iterations, unsigned int _exclusion_iterations, unsigned int _exclusion_threshold, gsl_rng * _p_rng, unsigned int _threads);
 
     // Infer correlation and covariance for n iterations
     void infer_correlation_and_covariance();
@@ -53,7 +53,7 @@ struct SparCpp {
 };
 
 
-struct SparCppIteration {
+struct FastSparIteration {
     // Some variables
     const OtuTable * otu_table;
     unsigned int exclusion_iterations;
@@ -78,8 +78,8 @@ struct SparCppIteration {
     arma::Mat<double> basis_covariance;
 
 
-    // Construct SparCppIterations with a given otu_table and other parameters
-    SparCppIteration(const OtuTable * _otu_table, unsigned int _exclusion_iterations, unsigned int _exclusion_threshold);
+    // Construct FastSparIterations with a given otu_table and other parameters
+    FastSparIteration(const OtuTable * _otu_table, unsigned int _exclusion_iterations, unsigned int _exclusion_threshold);
 
     // Estimates component fraction of all OTUs across samples using a dirichlet distribution
     void estimate_component_fractions(gsl_rng * p_rng);

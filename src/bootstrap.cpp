@@ -33,7 +33,7 @@ arma::Mat<double> get_bootstrap(OtuTable & otu_table, gsl_rng * p_rng) {
 
 
 void printHelp() {
-    std::cerr << "Program: SparCpp bootstraps (c++ implementation of SparCC)" << std::endl;
+    std::cerr << "Program: FastSpar bootstraps (c++ implementation of SparCC)" << std::endl;
     std::cerr << "Version: 0.1" << std::endl;
     std::cerr << "Contact: Stephen Watts (s.watts2@student.unimelb.edu.au)" << std::endl;
     std::cerr << std::endl;

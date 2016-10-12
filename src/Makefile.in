@@ -76,8 +76,8 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-bin_PROGRAMS = sparcpp$(EXEEXT) sparcpp_bootstrap$(EXEEXT) \
-	sparcpp_exactpvalues$(EXEEXT) sparcpp_reduce$(EXEEXT)
+bin_PROGRAMS = fastspar$(EXEEXT) fastspar_bootstrap$(EXEEXT) \
+	fastspar_exactpvalues$(EXEEXT) fastspar_reduce$(EXEEXT)
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/depcomp
@@ -91,19 +91,19 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
-am_sparcpp_OBJECTS = sparcpp.$(OBJEXT) common.$(OBJEXT)
-sparcpp_OBJECTS = $(am_sparcpp_OBJECTS)
-sparcpp_LDADD = $(LDADD)
-am_sparcpp_bootstrap_OBJECTS = bootstrap.$(OBJEXT) common.$(OBJEXT)
-sparcpp_bootstrap_OBJECTS = $(am_sparcpp_bootstrap_OBJECTS)
-sparcpp_bootstrap_LDADD = $(LDADD)
-am_sparcpp_exactpvalues_OBJECTS = exact_pvalue.$(OBJEXT) \
+am_fastspar_OBJECTS = fastspar.$(OBJEXT) common.$(OBJEXT)
+fastspar_OBJECTS = $(am_fastspar_OBJECTS)
+fastspar_LDADD = $(LDADD)
+am_fastspar_bootstrap_OBJECTS = bootstrap.$(OBJEXT) common.$(OBJEXT)
+fastspar_bootstrap_OBJECTS = $(am_fastspar_bootstrap_OBJECTS)
+fastspar_bootstrap_LDADD = $(LDADD)
+am_fastspar_exactpvalues_OBJECTS = exact_pvalue.$(OBJEXT) \
 	gaussq.$(OBJEXT) common.$(OBJEXT)
-sparcpp_exactpvalues_OBJECTS = $(am_sparcpp_exactpvalues_OBJECTS)
-sparcpp_exactpvalues_LDADD = $(LDADD)
-am_sparcpp_reduce_OBJECTS = reduce.$(OBJEXT) common.$(OBJEXT)
-sparcpp_reduce_OBJECTS = $(am_sparcpp_reduce_OBJECTS)
-sparcpp_reduce_LDADD = $(LDADD)
+fastspar_exactpvalues_OBJECTS = $(am_fastspar_exactpvalues_OBJECTS)
+fastspar_exactpvalues_LDADD = $(LDADD)
+am_fastspar_reduce_OBJECTS = reduce.$(OBJEXT) common.$(OBJEXT)
+fastspar_reduce_OBJECTS = $(am_fastspar_reduce_OBJECTS)
+fastspar_reduce_LDADD = $(LDADD)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -157,10 +157,10 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(sparcpp_SOURCES) $(sparcpp_bootstrap_SOURCES) \
-	$(sparcpp_exactpvalues_SOURCES) $(sparcpp_reduce_SOURCES)
-DIST_SOURCES = $(sparcpp_SOURCES) $(sparcpp_bootstrap_SOURCES) \
-	$(sparcpp_exactpvalues_SOURCES) $(sparcpp_reduce_SOURCES)
+SOURCES = $(fastspar_SOURCES) $(fastspar_bootstrap_SOURCES) \
+	$(fastspar_exactpvalues_SOURCES) $(fastspar_reduce_SOURCES)
+DIST_SOURCES = $(fastspar_SOURCES) $(fastspar_bootstrap_SOURCES) \
+	$(fastspar_exactpvalues_SOURCES) $(fastspar_reduce_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -283,10 +283,10 @@ top_srcdir = @top_srcdir@
 # Compiler flags
 AM_CXXFLAGS = -std=c++11 -Wall -Wextra -fopenmp
 AM_FFLAGS = -Wall -Wextra
-sparcpp_SOURCES = sparcpp.cpp common.cpp
-sparcpp_bootstrap_SOURCES = bootstrap.cpp common.cpp
-sparcpp_exactpvalues_SOURCES = exact_pvalue.cpp gaussq.f common.cpp
-sparcpp_reduce_SOURCES = reduce.cpp common.cpp
+fastspar_SOURCES = fastspar.cpp common.cpp
+fastspar_bootstrap_SOURCES = bootstrap.cpp common.cpp
+fastspar_exactpvalues_SOURCES = exact_pvalue.cpp gaussq.f common.cpp
+fastspar_reduce_SOURCES = reduce.cpp common.cpp
 all: all-am
 
 .SUFFIXES:
@@ -364,21 +364,21 @@ uninstall-binPROGRAMS:
 clean-binPROGRAMS:
 	-test -z "$(bin_PROGRAMS)" || rm -f $(bin_PROGRAMS)
 
-sparcpp$(EXEEXT): $(sparcpp_OBJECTS) $(sparcpp_DEPENDENCIES) $(EXTRA_sparcpp_DEPENDENCIES) 
-	@rm -f sparcpp$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(sparcpp_OBJECTS) $(sparcpp_LDADD) $(LIBS)
+fastspar$(EXEEXT): $(fastspar_OBJECTS) $(fastspar_DEPENDENCIES) $(EXTRA_fastspar_DEPENDENCIES) 
+	@rm -f fastspar$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(fastspar_OBJECTS) $(fastspar_LDADD) $(LIBS)
 
-sparcpp_bootstrap$(EXEEXT): $(sparcpp_bootstrap_OBJECTS) $(sparcpp_bootstrap_DEPENDENCIES) $(EXTRA_sparcpp_bootstrap_DEPENDENCIES) 
-	@rm -f sparcpp_bootstrap$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(sparcpp_bootstrap_OBJECTS) $(sparcpp_bootstrap_LDADD) $(LIBS)
+fastspar_bootstrap$(EXEEXT): $(fastspar_bootstrap_OBJECTS) $(fastspar_bootstrap_DEPENDENCIES) $(EXTRA_fastspar_bootstrap_DEPENDENCIES) 
+	@rm -f fastspar_bootstrap$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(fastspar_bootstrap_OBJECTS) $(fastspar_bootstrap_LDADD) $(LIBS)
 
-sparcpp_exactpvalues$(EXEEXT): $(sparcpp_exactpvalues_OBJECTS) $(sparcpp_exactpvalues_DEPENDENCIES) $(EXTRA_sparcpp_exactpvalues_DEPENDENCIES) 
-	@rm -f sparcpp_exactpvalues$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(sparcpp_exactpvalues_OBJECTS) $(sparcpp_exactpvalues_LDADD) $(LIBS)
+fastspar_exactpvalues$(EXEEXT): $(fastspar_exactpvalues_OBJECTS) $(fastspar_exactpvalues_DEPENDENCIES) $(EXTRA_fastspar_exactpvalues_DEPENDENCIES) 
+	@rm -f fastspar_exactpvalues$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(fastspar_exactpvalues_OBJECTS) $(fastspar_exactpvalues_LDADD) $(LIBS)
 
-sparcpp_reduce$(EXEEXT): $(sparcpp_reduce_OBJECTS) $(sparcpp_reduce_DEPENDENCIES) $(EXTRA_sparcpp_reduce_DEPENDENCIES) 
-	@rm -f sparcpp_reduce$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(sparcpp_reduce_OBJECTS) $(sparcpp_reduce_LDADD) $(LIBS)
+fastspar_reduce$(EXEEXT): $(fastspar_reduce_OBJECTS) $(fastspar_reduce_DEPENDENCIES) $(EXTRA_fastspar_reduce_DEPENDENCIES) 
+	@rm -f fastspar_reduce$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(fastspar_reduce_OBJECTS) $(fastspar_reduce_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -390,7 +390,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/common.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exact_pvalue.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/reduce.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sparcpp.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fastspar.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
