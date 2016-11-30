@@ -300,7 +300,7 @@ void printHelp() {
 
 int main(int argc, char **argv) {
     // Set some default parameters
-    unsigned int iterations = 20;
+    unsigned int iterations = 50;
     unsigned int exclude_iterations = 10;
     float threshold = 0.1;
     unsigned int threads = 1;

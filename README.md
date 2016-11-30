@@ -13,7 +13,7 @@ FastSpar can be installed using a package containing pre-compiled binaries or in
 
 
 ### Ubuntu package
-If you're running Ubuntu 14.04+, many dependencies will already be meet. The remaining can be satisfied by installing the follow packages:
+If you're running Ubuntu 14.04+, many dependencies will already be meet. The remaining can be satisfied by installing the following packages:
 ```bash
 sudo apt-get install libgomp1 libgsl0ldbl
 ```
@@ -36,7 +36,7 @@ GNU getopt
 GNU make
 ```
 
-After meet the above requirements, install FastSpar from source can be done with these commands:
+After meeting the above requirements, install FastSpar from source can be done with these commands:
 ```bash
 git clone https://github.com/scwatts/fastspar.git
 cd fastspar
