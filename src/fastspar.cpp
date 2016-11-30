@@ -133,11 +133,11 @@ void FastSparIteration::calculate_log_ratio_variance() {
              double col_variance = arma::var(log_fractions.col(i) - log_fractions.col(j));
 
              // Add to matrix
-             temp_variance(j, i) = col_variance;
+             temp_variance(i, j) = col_variance;
          }
     }
     // Reflect lower triangle to upper and move temp_variance to FastSparIteration.variance
-    variance = arma::symmatl(temp_variance);
+    variance = arma::symmatu(temp_variance);
 }
 
 
