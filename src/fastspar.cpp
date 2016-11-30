@@ -1,3 +1,4 @@
+#include <cmath>
 #include <string>
 #include <thread>
 #include <time.h>
@@ -56,8 +57,10 @@ void FastSpar::infer_correlation_and_covariance() {
 
             // Find and exclude pairs
             fastspar_iteration.find_and_exclude_pairs(exclusion_threshold);
+
             // Recalculate component variation after pair exclusion
             fastspar_iteration.calculate_component_variance();
+
             // Recalculate correlation and covariance after pair exclusion
             fastspar_iteration.calculate_correlation_and_corvariance();
         }
@@ -190,27 +193,42 @@ void FastSparIteration::calculate_correlation_and_corvariance(){
 
 
 void FastSparIteration::find_and_exclude_pairs(float threshold) {
-    // NOTE: BasisResults are passed by value as we need to makes changes only in this function
-    basis_correlation.diag().zeros();
-    basis_correlation = arma::abs(basis_correlation);
+    // Set diagonal to zero and get absolute value
+    arma::Mat<double> basis_correlation_abs = arma::abs(basis_correlation);
+    basis_correlation_abs.diag().zeros();
+
     // Set previously excluded correlations to zero
-    basis_correlation((arma::Col<arma::uword>)excluded).fill(0.0);
+    basis_correlation_abs((arma::Col<arma::uword>)excluded).fill(0.0);
+
     // Get all elements with the max value
-    double max_correlate = basis_correlation.max();
-    arma::Col<arma::uword> max_correlate_idx = arma::find(basis_correlation == max_correlate);
+    double max_correlate = basis_correlation_abs.max();
+    arma::Col<arma::uword> max_correlate_idx = arma::find(basis_correlation_abs == max_correlate);
+
     // If max correlation is above a threshold, subtract one from the appropriate mod matrix positions
     if (max_correlate > threshold) {
         // For each max correlate pair
         for (arma::Col<arma::uword>::iterator it = max_correlate_idx.begin(); it != max_correlate_idx.end(); ++it) {
+            arma::Col<arma::uword> idx = arma::ind2sub(arma::size(basis_correlation_abs), *it);
             // Substract from mod matrix
-            unsigned int diagonal_idx = *it % otu_table->otu_number;
-            mod.diag()[diagonal_idx] -= 1;
-            // TODO: Check if it's quicker to select all elements at once and then subtract one
-            --mod(*it);
+            unsigned int i_idx = *it % otu_table->otu_number;
+            unsigned int j_idx = std::floor(*it / otu_table->otu_number);
+
+            // Diagonal elements
+            --mod(i_idx, i_idx);
+            --mod(j_idx, j_idx);
+
+            // Non-diagonal elements
+            --mod(i_idx, j_idx);
+            --mod(j_idx, i_idx);
+
             // Also add excluded indices to running list
-            excluded.push_back(*it);
+            excluded.push_back(i_idx * otu_table->otu_number + j_idx);
+            excluded.push_back(j_idx * otu_table->otu_number + i_idx);
+
             // Finally decrease remaining component count
             --components_remaining;
+
+            break;
         }
     }
 }
