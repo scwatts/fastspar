@@ -13,9 +13,9 @@ FastSpar can be installed using a package containing pre-compiled binaries or in
 
 
 ### Ubuntu package
-If you're running Ubuntu 14.04+, many dependencies will already be meet. The remaining can be satisfied by installing the following packages:
+If you're running Ubuntu 14.04+, many dependencies will already be meet. The remaining can be satisfied by installing the following packages (the universe repository may need to be enabled to obtain libarpack2):
 ```bash
-sudo apt-get install libgomp1 libgsl0ldbl
+sudo apt-get install libquadmath0 libblas3 liblapack3 libgsl0ldbl libgfortran3 libarpack2 libgomp1 libarmadillo4
 ```
 
 The Ubuntu deb package can be obtained from the github release page. After downloading installation can be completed by:
@@ -23,13 +23,15 @@ The Ubuntu deb package can be obtained from the github release page. After downl
 sudo dpkg -i fastspar_0.0.2-1_amd64.deb
 ```
 
+The Ubuntu packages have been compiled to not required the Armadillo runtime library as this can be a difficult dependency to satisfy. This results in a performance decrease. If you're interested obtaining the best performance, we recommend installing from source (see below).
+
 
 ### From source
 If you're not on Ubuntu, you'll have to compile from source. Compilation requires these libraries and software:
 ```
 C++11
 Gfortran
-Armadillo 6.7+
+Armadillo 6.7+ (with LAPACK and BLAS for best performance)
 OpenMP 4.5+
 GNU Scientific Library 2.1+
 GNU getopt
