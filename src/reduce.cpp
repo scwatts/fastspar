@@ -97,7 +97,7 @@ void write_sparse_matrix(struct SparseMatrix& matrix, std::string out_filename) 
 
 void printHelp() {
     std::cerr << "Program: Filter correlation and p-value table. Output as sparse matrices" << std::endl;
-    std::cerr << "Version: 0.1" << std::endl;
+    std::cerr << "Version 0.0.2" << std::endl;
     std::cerr << "Contact: Stephen Watts (s.watts2@student.unimelb.edu.au)" << std::endl;
     std::cerr << std::endl;
     std::cerr << "Usage:" << std::endl;

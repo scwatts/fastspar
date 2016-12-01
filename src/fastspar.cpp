@@ -289,7 +289,7 @@ void FastSpar::calculate_median_correlation_and_covariance() {
 
 void printHelp() {
     std::cerr << "Program: FastSpar (c++ implementation of SparCC)" << std::endl;
-    std::cerr << "Version: 0.1" << std::endl;
+    std::cerr << "Version 0.0.2" << std::endl;
     std::cerr << "Contact: Stephen Watts (s.watts2@student.unimelb.edu.au)" << std::endl;
     std::cerr << std::endl;
     std::cerr << "Usage:" << std::endl;

@@ -20,7 +20,7 @@ sudo apt-get install libgomp1 libgsl0ldbl
 
 The Ubuntu deb package can be obtained from the github release page. After downloading installation can be completed by:
 ```bash
-sudo dpkg -i fastspar_0.0.1-1_amd64.deb
+sudo dpkg -i fastspar_0.0.2-1_amd64.deb
 ```
 
 
