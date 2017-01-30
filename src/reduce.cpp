@@ -1,20 +1,9 @@
-#include <fstream>
-#include <iostream>
-#include <sstream>
-#include <vector>
-
-
-#include <armadillo>
-#include <getopt.h>
-
-
-#include "common.h"
 #include "reduce.h"
 
 
 // TODO: Have this as a method? Also I think there is a good amount of code reuse in
 // common.cpp load correlation mat
-SquareMatrix load_square_matrix(std::string& filename) {
+SquareMatrix load_square_matrix(std::string filename) {
     // Used to store strings from file prior to matrix construction
     int element_count;
     std::string line;
@@ -82,7 +71,7 @@ SparseMatrix filter_matrix(SquareMatrix table, arma::Col<arma::uword> filtered_e
 }
 
 
-void write_sparse_matrix(struct SparseMatrix& matrix, std::string out_filename) {
+void write_sparse_matrix(struct SparseMatrix &matrix, std::string out_filename) {
     // Get stream handle
     std::ofstream outfile;
     outfile.open(out_filename);
@@ -95,133 +84,17 @@ void write_sparse_matrix(struct SparseMatrix& matrix, std::string out_filename) 
 }
 
 
-void printHelp() {
-    std::cerr << "Program: Filter correlation and p-value table. Output as sparse matrices" << std::endl;
-    std::cerr << "Version 0.0.2" << std::endl;
-    std::cerr << "Contact: Stephen Watts (s.watts2@student.unimelb.edu.au)" << std::endl;
-    std::cerr << std::endl;
-    std::cerr << "Usage:" << std::endl;
-    std::cerr << "  reduce --correlation_table <cf> --pvalue_table <pf> --correlation <rt> --pvalue <pt> --output_prefix <op>" << std::endl;
-    std::cerr << std::endl;
-    std::cerr << "  -c/--correlation_table <cf>       Correlation input table" << std::endl;
-    std::cerr << "  -p/--pvalue_table <pf>            Number of bootstrap samples to generate" << std::endl;
-    std::cerr << "  -r/--correlation <rt>             Absolute (sign is ignored) correlation threshold (default: 0.1)" << std::endl;
-    std::cerr << "  -v/--pvalue <pt>                  P-value threshold (default: 0.05)" << std::endl;
-    std::cerr << "  -o/--output_prefix <op>           Output prefix" << std::endl;
-
-}
-
-
 int main(int argc, char **argv) {
-    // Define some variables
-    float correlation_threshold = 0.1;
-    float pvalue_threshold = 0.05;
-    std::string correlation_filename;
-    std::string pvalue_filename;
-    std::string output_prefix;
-
-    // Commandline arguments (for getlongtops)
-    struct option long_options[] =
-        {
-            {"correlation_table", required_argument, NULL, 'c'},
-            {"pvalue_table", required_argument, NULL, 'p'},
-            {"correlation", required_argument, NULL, 'r'},
-            {"pvalue", required_argument, NULL, 'v'},
-            {"output_prefix", required_argument, NULL, 'o'},
-            {"help", no_argument, NULL, 'h'},
-            {NULL, 0, 0, 0}
-        };
-
-    // Check if have an attemp at arguments, else print help
-    // TODO: Fix this. Will fail to catch if given optional args but not all required...
-    if (argc < 3) {
-        printHelp();
-        std::cerr << std::endl << argv[0];
-        std::cerr << ": error: options -c/--correlation_table, -p/--pvalue_table and -o/--output_prefix are required" << std::endl;
-        exit(0);
-    }
-
-    // Parse commandline arguments
-    while (1) {
-        int option_index = 0;
-        int c;
-        c = getopt_long (argc, argv, "hc:p:r:v:o:", long_options, &option_index);
-        if (c == -1) {
-            break;
-        }
-        switch(c) {
-            // TODO: do we need case(0)?
-            case 'c':
-                correlation_filename = optarg;
-                break;
-            case 'p':
-                pvalue_filename = optarg;
-                break;
-            case 'r':
-                correlation_threshold = get_float_from_char(optarg);
-                break;
-            case 'v':
-                pvalue_threshold = get_float_from_char(optarg);
-                break;
-            case 'o':
-                output_prefix = optarg;
-                break;
-            case 'h':
-                printHelp();
-                exit(0);
-            default:
-                printHelp();
-                exit(1);
-        }
-    }
-
-    // Abort execution if given unknown arguments
-    if (optind < argc){
-        std::cerr << argv[0] << " invalid argument: " << argv[optind++] << std::endl;
-    }
-    // Make sure we have filenames and parameters
-    if (correlation_filename.empty()) {
-        printHelp();
-        std::cerr << std::endl << argv[0];
-        std::cerr << ": error: argument -c/--correlation_table is required" << std::endl;
-        exit(1);
-    }
-    if (pvalue_filename.empty()) {
-        printHelp();
-        std::cerr << std::endl << argv[0];
-        std::cerr << ": error: argument -p/--pvalue_table is required" << std::endl;
-        exit(1);
-    }
-    if (output_prefix.empty()) {
-        printHelp();
-        std::cerr << std::endl << argv[0];
-        std::cerr << ": error: argument -o/--output_prefix is required" << std::endl;
-        exit(1);
-    }
-    // Check that the correlation file exists
-    std::ifstream checkfile;
-    checkfile.open(correlation_filename);
-    if (!checkfile.good()) {
-        std::cerr << std::endl << argv[0];
-        std::cerr << ": error: correlation table file " << correlation_filename << " does not exist" << std::endl;
-        exit(1);
-    }
-    checkfile.close();
-    // Check that the pvalue file exists
-    checkfile.open(pvalue_filename);
-    if (!checkfile.good()) {
-        std::cerr << std::endl << argv[0];
-        std::cerr << ": error: p-value table file " << pvalue_filename << " does not exist" << std::endl;
-        exit(1);
-    }
+    // Get commandline arguments
+    ReduceOptions reduce_options = get_commandline_arguments(argc, argv);
 
     // Load correlation and p-value tables
-    SquareMatrix correlation_table = load_square_matrix(correlation_filename);
-    SquareMatrix pvalue_table = load_square_matrix(pvalue_filename);
+    SquareMatrix correlation_table = load_square_matrix(reduce_options.correlation_filename);
+    SquareMatrix pvalue_table = load_square_matrix(reduce_options.pvalue_filename);
 
     // Find index of elements which both pass specified threshold
-    arma::Col<arma::uword> all_filtered_element_indices = arma::find(arma::abs(correlation_table.elements) >= correlation_threshold &&
-                                                          pvalue_table.elements <= pvalue_threshold);
+    arma::Col<arma::uword> all_filtered_element_indices = arma::find(arma::abs(correlation_table.elements) >= reduce_options.correlation_threshold &&
+                                                          pvalue_table.elements <= reduce_options.pvalue_threshold);
 
     // Select indices in the upper triangle of the matrix (to prevent outputing the same
     // correlation or p-value twice)
@@ -245,6 +118,6 @@ int main(int argc, char **argv) {
     SparseMatrix filtered_pvalue_table = filter_matrix(pvalue_table, filtered_element_indices);
 
     // Write filtered OTU correlates to file
-    write_sparse_matrix(filtered_correlation_table, output_prefix + "_filtered_correlation.tsv");
-    write_sparse_matrix(filtered_pvalue_table, output_prefix + "_filtered_pvalue.tsv");
+    write_sparse_matrix(filtered_correlation_table, reduce_options.output_prefix + "_filtered_correlation.tsv");
+    write_sparse_matrix(filtered_pvalue_table, reduce_options.output_prefix + "_filtered_pvalue.tsv");
 }

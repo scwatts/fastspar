@@ -2,15 +2,18 @@
 #define __FASTSPAR_H__
 
 
-#include <vector>
-#include <string>
+#include <cmath>
+#include <thread>
+#include <time.h>
 
 
 #include <gsl/gsl_randist.h>
-#include <armadillo>
 
 
 #include "common.h"
+#if defined(FASTSPAR_CPACKAGE)
+    #include "fastspar_opts.h"
+#endif
 
 
 struct FastSpar {
@@ -20,7 +23,7 @@ struct FastSpar {
     unsigned int exclusion_threshold;
 
     // RNG
-    gsl_rng * p_rng;
+    gsl_rng *p_rng;
 
     // Threads to use during iteration
     unsigned int threads;
@@ -28,10 +31,10 @@ struct FastSpar {
     // Filenames
     std::string otu_filename;
     std::string correlation_output_filename;
-    std::string corvariance_output_filename;
+    std::string covariance_output_filename;
 
     // OTU count matrix
-    const OtuTable * otu_table;
+    const OtuTable *otu_table;
 
     // List of each correlation and covariance matrix calculated during iterations
     std::vector<arma::Mat<double>> correlation_vector;
@@ -43,7 +46,7 @@ struct FastSpar {
 
 
     // Construct FastSpar with a given otu_table and other parameters
-    FastSpar(const OtuTable * _otu_table, unsigned int _iterations, unsigned int _exclusion_iterations, unsigned int _exclusion_threshold, gsl_rng * _p_rng, unsigned int _threads);
+    FastSpar(const OtuTable *_otu_table, unsigned int _iterations, unsigned int _exclusion_iterations, unsigned int _exclusion_threshold, gsl_rng *_p_rng, unsigned int _threads);
 
     // Infer correlation and covariance for n iterations
     void infer_correlation_and_covariance();
@@ -55,7 +58,7 @@ struct FastSpar {
 
 struct FastSparIteration {
     // Some variables
-    const OtuTable * otu_table;
+    const OtuTable *otu_table;
     unsigned int exclusion_iterations;
     unsigned int exclusion_threshold;
 
@@ -79,10 +82,10 @@ struct FastSparIteration {
 
 
     // Construct FastSparIterations with a given otu_table and other parameters
-    FastSparIteration(const OtuTable * _otu_table, unsigned int _exclusion_iterations, unsigned int _exclusion_threshold);
+    FastSparIteration(const OtuTable *_otu_table, unsigned int _exclusion_iterations, unsigned int _exclusion_threshold);
 
     // Estimates component fraction of all OTUs across samples using a dirichlet distribution
-    void estimate_component_fractions(gsl_rng * p_rng);
+    void estimate_component_fractions(gsl_rng *p_rng);
 
     // Calculate the log ratio variance of the estimated fractions
     void calculate_log_ratio_variance();
@@ -91,7 +94,7 @@ struct FastSparIteration {
     void calculate_component_variance();
 
     // Calculate the basis correlation and covariance
-    void calculate_correlation_and_corvariance();
+    void calculate_correlation_and_covariance();
 
     // Find and exclude highly correlation OTU pairs
     void find_and_exclude_pairs(float threshold);

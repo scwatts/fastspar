@@ -1,9 +1,3 @@
-#include <iomanip>
-#include <string>
-#include <vector>
-
-
-#include "armadillo"
 #include "common.h"
 
 
@@ -60,7 +54,7 @@ void OtuTable::load_otu_file(std::string filename) {
 
 
 // Load a correlation table from file
-arma::Mat<double> load_correlation_file(std::string& filename) {
+arma::Mat<double> load_correlation_file(std::string &filename) {
     // Used to store strings from file prior to matrix construction and other variables
     std::string line;
     std::string ele;
@@ -106,7 +100,7 @@ arma::Mat<double> load_correlation_file(std::string& filename) {
 }
 
 
-void write_out_square_otu_matrix(arma::Mat<double> & matrix, OtuTable & otu_table, std::string filename) {
+void write_out_square_otu_matrix(arma::Mat<double> &matrix, OtuTable &otu_table, std::string filename) {
     // Get stream handle
     std::ofstream outfile;
     outfile.open(filename);
@@ -131,13 +125,13 @@ void write_out_square_otu_matrix(arma::Mat<double> & matrix, OtuTable & otu_tabl
 }
 
 
-int get_int_from_char(const char* optarg) {
+int int_from_optarg(const char *optarg) {
     // Check at most the first 8 characters are numerical
     std::string optstring(optarg);
     std::string string_int = optstring.substr(0, 8);
     for (std::string::iterator it = string_int.begin(); it != string_int.end(); ++it) {
         if (!isdigit(*it)) {
-            std::cerr << "This doesn't look like a number: " << optarg << std::endl;;
+            fprintf(stderr, "This doesn't look like a usable integer: %s\n", optarg);
             exit(1);
         }
     }
@@ -145,15 +139,15 @@ int get_int_from_char(const char* optarg) {
 }
 
 
-float get_float_from_char(const char* optarg) {
+float float_from_optarg(const char *optarg) {
     // Check at most the first 8 characters are numerical
     std::string optstring(optarg);
-    std::string string_float = optstring.substr(0, 8);
-    for (std::string::iterator it = string_float.begin(); it != string_float.end(); ++it) {
+    std::string string_double = optstring.substr(0, 8);
+    for (std::string::iterator it = string_double.begin(); it != string_double.end(); ++it) {
         if (!isdigit(*it) && (*it) != '.') {
-            std::cerr << "This doesn't look like a float: " << optarg << std::endl;;
+            fprintf(stderr, "This doesn't look like a usable double: %s\n", optarg);
             exit(1);
         }
     }
-    return std::atof(string_float.c_str());
+    return std::atof(string_double.c_str());
 }

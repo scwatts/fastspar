@@ -2,11 +2,12 @@
 #define __REDUCE_H__
 
 
-#include <string>
-#include <vector>
+#include <iostream>
+#include <sstream>
 
 
-#include <armadillo>
+#include "reduce_opts.h"
+#include "common.h"
 
 
 // Structure to hold information about a square matrix
@@ -27,15 +28,13 @@ struct SparseMatrix {
 
 
 // Load a square matrix (e.g. correlation matrix) and return a SquareMatrux object
-SquareMatrix load_square_matrix(std::string& filename);
+SquareMatrix load_square_matrix(std::string filename);
 
 // Given two criteria (p-value and correlation threshold), filter a matrix and return a SparseMatrix
 SparseMatrix filter_matrix(SquareMatrix table, arma::Col<arma::uword> filtered_element_indices);
 
 // Write a SparseMatrix to file
-void write_sparse_matrix(struct SparseMatrix& matrix, std::string out_filename);
-
-
+void write_sparse_matrix(struct SparseMatrix &matrix, std::string out_filename);
 
 
 #endif

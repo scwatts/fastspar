@@ -1,21 +1,8 @@
-#include <cmath>
-#include <string>
-#include <thread>
-#include <time.h>
-#include <vector>
-
-
-#include <armadillo>
-#include <gsl/gsl_randist.h>
-#include <getopt.h>
-
-
 #include "fastspar.h"
-#include "common.h"
 
 
 // Initialise a FastSpar object (must be parsed a pointer to an OTU table struct and other paramters)
-FastSpar::FastSpar(const OtuTable * _otu_table, unsigned int _iterations, unsigned int _exclusion_iterations, unsigned int _exclusion_threshold, gsl_rng * _p_rng, unsigned int _threads) {
+FastSpar::FastSpar(const OtuTable *_otu_table, unsigned int _iterations, unsigned int _exclusion_iterations, unsigned int _exclusion_threshold, gsl_rng *_p_rng, unsigned int _threads) {
     otu_table = _otu_table;
     iterations = _iterations;
     exclusion_iterations = _exclusion_iterations;
@@ -44,7 +31,7 @@ void FastSpar::infer_correlation_and_covariance() {
         fastspar_iteration.calculate_component_variance();
 
         // STEP 3: Calculate correlation and covariance from basis variation and estimated fractions
-        fastspar_iteration.calculate_correlation_and_corvariance();
+        fastspar_iteration.calculate_correlation_and_covariance();
 
         // STEP 4: Exclude highly correlated pairs, repeating correlation/ covariance calculation each iteration
         for (unsigned int j = 0; j < exclusion_iterations; ++j) {
@@ -62,16 +49,15 @@ void FastSpar::infer_correlation_and_covariance() {
             fastspar_iteration.calculate_component_variance();
 
             // Recalculate correlation and covariance after pair exclusion
-            fastspar_iteration.calculate_correlation_and_corvariance();
+            fastspar_iteration.calculate_correlation_and_covariance();
         }
 
         // SparCC performs Pearson product-moment correlation coefficients (numpy.corrcoef) after apply a center
         // log ratio if the maximum correlation magnitude is greater than 1
         // TODO: Implement this (:
         if (arma::abs(fastspar_iteration.basis_correlation).max() > 1.0){
-            std::string error_str = "Input triggered condition to perform clr correlation, this is not yet implemented";
-            std::cerr << error_str << std::endl;
-	    exit(0);
+            fprintf(stderr, "Input triggered condition to perform clr correlation, this is not yet implemented\n");
+            exit(0);
         }
 
         // Finally add the calculated correlation and covariances to a running vector
@@ -85,7 +71,7 @@ void FastSpar::infer_correlation_and_covariance() {
 
 
 // Initialise a FastSpar object (must be parsed a pointer to an OTU table struct and other paramters)
-FastSparIteration::FastSparIteration(const OtuTable * _otu_table, unsigned int _exclusion_iterations, unsigned int _exclusion_threshold) {
+FastSparIteration::FastSparIteration(const OtuTable *_otu_table, unsigned int _exclusion_iterations, unsigned int _exclusion_threshold) {
     otu_table = _otu_table;
     exclusion_iterations = _exclusion_iterations;
     exclusion_threshold = _exclusion_threshold;
@@ -98,7 +84,7 @@ FastSparIteration::FastSparIteration(const OtuTable * _otu_table, unsigned int _
 }
 
 
-void FastSparIteration::estimate_component_fractions(gsl_rng * p_rng) {
+void FastSparIteration::estimate_component_fractions(gsl_rng *p_rng) {
     // TODO: check if it's more efficient to gather fractions and then init arma::Mat (instead of init elements)
     // Estimate fractions by drawing from dirichlet distribution
     arma::Mat<double> temp_fractions(otu_table->sample_number, otu_table->otu_number);
@@ -109,12 +95,14 @@ void FastSparIteration::estimate_component_fractions(gsl_rng * p_rng) {
         std::vector<double> row_pseudocount_vector = arma::conv_to<std::vector<double>>::from(row_pseudocount);
         // Draw from dirichlet dist, storing results in theta double array
         size_t row_size = row_pseudocount_vector.size();
-        double theta[row_size];
+        double *theta = new double[row_size];
         // The function takes double arrays and it seems that you must pass the address of the first element to function
         gsl_ran_dirichlet(p_rng, row_size, &row_pseudocount_vector[0], theta);
         // Create arma::Row from double[] and update fractions row
         arma::Mat<double> estimated_fractions_row(theta, 1, otu_table->otu_number);
         temp_fractions.row(i) = estimated_fractions_row;
+        // Free dynamic memory
+        delete[] theta;
     }
     // Move temp_fractions to FastSparIteration.factions
     fractions = std::move(temp_fractions);
@@ -156,7 +144,7 @@ void FastSparIteration::calculate_component_variance() {
 }
 
 
-void FastSparIteration::calculate_correlation_and_corvariance(){
+void FastSparIteration::calculate_correlation_and_covariance(){
     // TODO: Determine if basis_cor_el and basis_cov_el can all be calculated and then have arma::Mat initialised
     // Initialise matrices and set diagonals
     // TODO: We only need to set diagonal on final table (we otherwise set diag to zero then check for high correlates)
@@ -287,175 +275,25 @@ void FastSpar::calculate_median_correlation_and_covariance() {
 }
 
 
-void printHelp() {
-    std::cerr << "Program: FastSpar (c++ implementation of SparCC)" << std::endl;
-    std::cerr << "Version 0.0.2" << std::endl;
-    std::cerr << "Contact: Stephen Watts (s.watts2@student.unimelb.edu.au)" << std::endl;
-    std::cerr << std::endl;
-    std::cerr << "Usage:" << std::endl;
-    std::cerr << "  fastspar [options] --otu_table <of> --correlation <rf> --covariance <vf>" << std::endl;
-    std::cerr << std::endl;
-    std::cerr << "  -c <of>, --otu_table <of>" << std::endl;
-    std::cerr << "                OTU input OTU count table" << std::endl;
-    std::cerr << "  -r <rf>, -correlation <rf>" << std::endl;
-    std::cerr << "                Correlation output table" << std::endl;
-    std::cerr << "  -v <vf>, --covariance <vf>" << std::endl;
-    std::cerr << "                Covariance output table" << std::endl;
-    std::cerr << std::endl;
-    std::cerr << "Options:" << std::endl;
-    std::cerr << "  -h, --help    Show this help message and exit" << std::endl;
-    std::cerr << "  -i <int>, --iterations <int>" << std::endl;
-    std::cerr << "                Number of interations to perform (50 default)" << std::endl;
-    std::cerr << "  -x <int>, --exclusion_iterations <int>" << std::endl;
-    std::cerr << "                Number of exclusion interations to perform (10 default)" << std::endl;
-    std::cerr << "  -e <float>, --exclusion_iterations <float>" << std::endl;
-    std::cerr << "                Correlation strength exclusion threshold (0.1 default)" << std::endl;
-    std::cerr << "  -t <int>, --threads <int>" << std::endl;
-    std::cerr << "                Number of threads (1 default)" << std::endl;
-
-}
-
-
+#if defined(FASTSPAR_CPACKAGE)
 int main(int argc, char **argv) {
-    // Set some default parameters
-    unsigned int iterations = 50;
-    unsigned int exclude_iterations = 10;
-    float threshold = 0.1;
-    unsigned int threads = 1;
-    unsigned int available_threads = std::thread::hardware_concurrency();
-
-    // Declare some important variables
-    std::string otu_filename;
-    std::string correlation_filename;
-    std::string covariance_filename;
-
-    // Commandline arguments (for getlongtops)
-    struct option long_options[] =
-        {
-            {"otu_table", required_argument, NULL, 'c'},
-            {"correlation", required_argument, NULL, 'r'},
-            {"covariance", required_argument, NULL, 'v'},
-            {"iterations", required_argument, NULL, 'i'},
-            {"exclude_iterations", required_argument, NULL, 'x'},
-            {"threshold", required_argument, NULL, 'e'},
-            {"threads", required_argument, NULL, 't'},
-            {"help", no_argument, NULL, 'h'},
-            {NULL, 0, 0, 0}
-        };
-
-    // Check if have an attemp at arguments, else print help
-    if (argc < 2) {
-        printHelp();
-        std::cerr << std::endl << argv[0];
-        std::cerr << ": error: options -c/--otu_table, -r/--correlation, and -v/--covariance are required" << std::endl;
-        exit(0);
-    }
-
-    // Parse commandline arguments
-    while (1) {
-        int option_index = 0;
-        int c;
-        c = getopt_long (argc, argv, "hc:r:v:i:x:e:t:", long_options, &option_index);
-        if (c == -1) {
-            break;
-        }
-        switch(c) {
-            // TODO: do we need case(0)?
-            case 'c':
-                otu_filename = optarg;
-                break;
-            case 'r':
-                correlation_filename = optarg;
-                break;
-            case 'v':
-                covariance_filename = optarg;
-                break;
-            case 'i':
-                iterations = get_int_from_char(optarg);
-                break;
-            case 'x':
-                exclude_iterations = get_int_from_char(optarg);
-                break;
-            case 'e':
-                threshold = get_float_from_char(optarg);
-                break;
-            case 't':
-                threads = get_int_from_char(optarg);
-                break;
-            case 'h':
-                printHelp();
-                exit(0);
-            default:
-                exit(1);
-        }
-    }
-    // Abort execution if given unknown arguments
-    if (optind < argc){
-        std::cerr << argv[0] << " invalid argument: " << argv[optind++] << std::endl;
-    }
-
-    // Make sure we have filenames
-    if (otu_filename.empty()) {
-        printHelp();
-        std::cerr << std::endl << argv[0];
-        std::cerr << ": error: argument -c/--otu_table is required" << std::endl;
-        exit(1);
-    }
-    if (correlation_filename.empty()) {
-        printHelp();
-        std::cerr << std::endl << argv[0];
-        std::cerr << ": error: argument -r/--correlation is required" << std::endl;
-        exit(1);
-    }
-    if (covariance_filename.empty()) {
-        printHelp();
-        std::cerr << std::endl << argv[0];
-        std::cerr << ": error: argument -v/--covariance is required" << std::endl;
-        exit(1);
-    }
-
-    // Ensure threshold is less than 100
-    if (threshold > 1) {
-        std::cerr << "Threshold cannot be greather than 1.0\n";
-        exit(1);
-    }
-
-    // Check if have a reasonable number of threads
-    if (threads < 1) {
-        std::cerr << "Must have at least 1 thread" << std::endl;
-        exit(1);
-    }
-    if (available_threads > 1 && threads > available_threads) {
-        std::cerr << "The machine only has " << available_threads << " threads, you asked for " << threads << std::endl;
-        exit(1);
-    } else if (threads > 64) {
-        std::cerr << "Current hardcode limit of 64 threads" << std::endl;
-        exit(1);
-    }
-
-    // Check that the OTU file exists
-    std::ifstream otu_file;
-    otu_file.open(otu_filename);
-    if (!otu_file.good()) {
-        std::cerr << std::endl << argv[0];
-        std::cerr << ": error: OTU table file " << otu_filename << " does not exist" << std::endl;
-        exit(1);
-    }
+    // Get commandline options
+    FastsparOptions fastspar_options = get_commandline_arguments(argc, argv);
 
     // OpenMP function from omp.h. This sets the number of threads in a more reliable way but also ignores OMP_NUM_THREADS
-    omp_set_num_threads(threads);
+    omp_set_num_threads(fastspar_options.threads);
 
     // Set up rng environment and seed
-    const gsl_rng_type * rng_type;
+    const gsl_rng_type *rng_type;
     gsl_rng_env_setup();
     // gsl_rng_default is a global
     rng_type = gsl_rng_default;
-    gsl_rng * p_rng = gsl_rng_alloc(rng_type);
+    gsl_rng *p_rng = gsl_rng_alloc(rng_type);
     gsl_rng_set(p_rng, time(NULL));
 
     // Load the OTU table from file and construct count matrix
-    struct OtuTable otu_table;
-    otu_table.load_otu_file(otu_filename);
+    OtuTable otu_table;
+    otu_table.load_otu_file(fastspar_options.otu_filename);
 
     // Make sure we have at least 4 components to run SparCC
     if (otu_table.otu_number < 4) {
@@ -464,7 +302,8 @@ int main(int argc, char **argv) {
     }
 
     // Initialise a FastSpar object
-    FastSpar fastspar(&otu_table, iterations, exclude_iterations, threshold, p_rng, threads);
+    FastSpar fastspar(&otu_table, fastspar_options.iterations, fastspar_options.exclude_iterations,
+                      fastspar_options.threshold, p_rng, fastspar_options.threads);
 
     // Run FastSpar iterations
     printf("Running SparCC iterations\n");
@@ -476,9 +315,10 @@ int main(int argc, char **argv) {
 
     // Write median correlation and covariance matrices
     printf("Writing out median correlation and covariance matrices\n");
-    write_out_square_otu_matrix(fastspar.median_correlation, otu_table, correlation_filename);
-    write_out_square_otu_matrix(fastspar.median_covariance, otu_table, covariance_filename);
+    write_out_square_otu_matrix(fastspar.median_correlation, otu_table, fastspar_options.correlation_filename);
+    write_out_square_otu_matrix(fastspar.median_covariance, otu_table, fastspar_options.covariance_filename);
 
     // Free rng memory
     gsl_rng_free(p_rng);
 }
+#endif

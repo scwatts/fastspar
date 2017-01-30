@@ -2,11 +2,22 @@
 #define __COMMON_H__
 
 
+#include <iomanip>
 #include <string>
 #include <vector>
 
 
-#include <armadillo>
+#include "omp.h"
+
+
+#include "config.h"
+
+
+#if defined(FASTSPAR_RPACKAGE)
+    #include "RcppArmadillo.h"
+#else
+    #include "armadillo"
+#endif
 
 
 // Object to hold information about an OTU table and method to load from file
@@ -23,18 +34,17 @@ struct OtuTable {
 
 
 // Load a correlation (or covariance table) from file
-arma::Mat<double> load_correlation_file(std::string& filename);
+arma::Mat<double> load_correlation_file(std::string &filename);
 
 // Save an square OTU matrix (e.g. correlation matrix) to file
-void write_out_square_otu_matrix(arma::Mat<double> & matrix, OtuTable & otu_table, std::string filename);
+void write_out_square_otu_matrix(arma::Mat<double> &matrix, OtuTable &otu_table, std::string filename);
 
 
 // Convert character to integer (for commandline argument parsing)
-int get_int_from_char(const char* optarg);
-
+int int_from_optarg(const char *optarg);
 
 // Convert character to float (for commandline argument parsing)
-float get_float_from_char(const char* optarg);
+float float_from_optarg(const char *optarg);
 
 
 #endif
