@@ -100,17 +100,20 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
-am_fastspar_OBJECTS = fastspar.$(OBJEXT) common.$(OBJEXT)
+am_fastspar_OBJECTS = fastspar.$(OBJEXT) fastspar_opts.$(OBJEXT) \
+	common.$(OBJEXT)
 fastspar_OBJECTS = $(am_fastspar_OBJECTS)
 fastspar_LDADD = $(LDADD)
-am_fastspar_bootstrap_OBJECTS = bootstrap.$(OBJEXT) common.$(OBJEXT)
+am_fastspar_bootstrap_OBJECTS = bootstrap.$(OBJEXT) \
+	bootstrap_opts.$(OBJEXT) common.$(OBJEXT)
 fastspar_bootstrap_OBJECTS = $(am_fastspar_bootstrap_OBJECTS)
 fastspar_bootstrap_LDADD = $(LDADD)
 am_fastspar_exactpvalues_OBJECTS = exact_pvalue.$(OBJEXT) \
-	gaussq.$(OBJEXT) common.$(OBJEXT)
+	exact_pvalue_opts.$(OBJEXT) gaussq.$(OBJEXT) common.$(OBJEXT)
 fastspar_exactpvalues_OBJECTS = $(am_fastspar_exactpvalues_OBJECTS)
 fastspar_exactpvalues_LDADD = $(LDADD)
-am_fastspar_reduce_OBJECTS = reduce.$(OBJEXT) common.$(OBJEXT)
+am_fastspar_reduce_OBJECTS = reduce.$(OBJEXT) reduce_opts.$(OBJEXT) \
+	common.$(OBJEXT)
 fastspar_reduce_OBJECTS = $(am_fastspar_reduce_OBJECTS)
 fastspar_reduce_LDADD = $(LDADD)
 AM_V_P = $(am__v_P_@AM_V@)
@@ -281,6 +284,7 @@ pdfdir = @pdfdir@
 prefix = @prefix@
 program_transform_name = @program_transform_name@
 psdir = @psdir@
+runstatedir = @runstatedir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 srcdir = @srcdir@
@@ -293,10 +297,10 @@ top_srcdir = @top_srcdir@
 # Compiler flags
 AM_CXXFLAGS = -std=c++11 -Wall -Wextra -fopenmp
 AM_FFLAGS = -Wall -Wextra
-fastspar_SOURCES = fastspar.cpp common.cpp
-fastspar_bootstrap_SOURCES = bootstrap.cpp common.cpp
-fastspar_exactpvalues_SOURCES = exact_pvalue.cpp gaussq.f common.cpp
-fastspar_reduce_SOURCES = reduce.cpp common.cpp
+fastspar_SOURCES = fastspar.cpp fastspar_opts.cpp common.cpp
+fastspar_bootstrap_SOURCES = bootstrap.cpp bootstrap_opts.cpp common.cpp
+fastspar_exactpvalues_SOURCES = exact_pvalue.cpp exact_pvalue_opts.cpp gaussq.f common.cpp
+fastspar_reduce_SOURCES = reduce.cpp reduce_opts.cpp common.cpp
 all: all-am
 
 .SUFFIXES:
@@ -396,10 +400,14 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bootstrap.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bootstrap_opts.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/common.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exact_pvalue.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exact_pvalue_opts.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fastspar.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fastspar_opts.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/reduce.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/reduce_opts.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
