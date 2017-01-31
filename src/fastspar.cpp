@@ -2,18 +2,28 @@
 
 
 // Initialise a FastSpar object (must be parsed a pointer to an OTU table struct and other paramters)
-FastSpar::FastSpar(const OtuTable *_otu_table, unsigned int _iterations, unsigned int _exclusion_iterations, unsigned int _exclusion_threshold, gsl_rng *_p_rng, unsigned int _threads) {
+FastSpar::FastSpar(const OtuTable *_otu_table, unsigned int _iterations, unsigned int _exclusion_iterations, unsigned int _exclusion_threshold, unsigned int _threads) {
     otu_table = _otu_table;
     iterations = _iterations;
     exclusion_iterations = _exclusion_iterations;
     exclusion_threshold = _exclusion_threshold;
-    p_rng = _p_rng;
     threads = _threads;
+
+    // OpenMP function from omp.h. This sets the number of threads in a more reliable way but also ignores OMP_NUM_THREADS
+    omp_set_num_threads(threads);
 }
 
 
-// Run the FastSpar algorithm
+// Run the correlation algorithm
 void FastSpar::infer_correlation_and_covariance() {
+    // Make sure we have at least 4 components to run SparCC correlation calculation
+    if (otu_table->otu_number < 4) {
+        fprintf(stderr, "The SparCC algorithm requires at least 4 components to run\n");
+        exit(0);
+    }
+
+    // Set up rng environment and seed
+    FastSpar::p_rng = get_default_rng_handle();
 
 #pragma omp parallel for schedule(static, 1)
     for (unsigned int i = 0; i < iterations; ++i) {
@@ -67,6 +77,9 @@ void FastSpar::infer_correlation_and_covariance() {
         covariance_vector.push_back(fastspar_iteration.basis_covariance.diag());
 	}
     }
+
+    // Free rng memory
+    gsl_rng_free(p_rng);
 }
 
 
@@ -280,30 +293,13 @@ int main(int argc, char **argv) {
     // Get commandline options
     FastsparOptions fastspar_options = get_commandline_arguments(argc, argv);
 
-    // OpenMP function from omp.h. This sets the number of threads in a more reliable way but also ignores OMP_NUM_THREADS
-    omp_set_num_threads(fastspar_options.threads);
-
-    // Set up rng environment and seed
-    const gsl_rng_type *rng_type;
-    gsl_rng_env_setup();
-    // gsl_rng_default is a global
-    rng_type = gsl_rng_default;
-    gsl_rng *p_rng = gsl_rng_alloc(rng_type);
-    gsl_rng_set(p_rng, time(NULL));
-
     // Load the OTU table from file and construct count matrix
     OtuTable otu_table;
     otu_table.load_otu_file(fastspar_options.otu_filename);
 
-    // Make sure we have at least 4 components to run SparCC
-    if (otu_table.otu_number < 4) {
-        fprintf(stderr, "The SparCC algorithm requires at least 4 components to run\n");
-        exit(0);
-    }
-
     // Initialise a FastSpar object
     FastSpar fastspar(&otu_table, fastspar_options.iterations, fastspar_options.exclude_iterations,
-                      fastspar_options.threshold, p_rng, fastspar_options.threads);
+                      fastspar_options.threshold, fastspar_options.threads);
 
     // Run FastSpar iterations
     printf("Running SparCC iterations\n");
@@ -317,8 +313,5 @@ int main(int argc, char **argv) {
     printf("Writing out median correlation and covariance matrices\n");
     write_out_square_otu_matrix(fastspar.median_correlation, otu_table, fastspar_options.correlation_filename);
     write_out_square_otu_matrix(fastspar.median_covariance, otu_table, fastspar_options.covariance_filename);
-
-    // Free rng memory
-    gsl_rng_free(p_rng);
 }
 #endif

@@ -2,10 +2,6 @@
 #define __FASTSPAR_OPTS__
 
 
-#include <fstream>
-#include <thread>
-
-
 #include <getopt.h>
 
 

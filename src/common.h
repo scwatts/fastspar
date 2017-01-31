@@ -2,11 +2,14 @@
 #define __COMMON_H__
 
 
+#include <fstream>
 #include <iomanip>
 #include <string>
+#include <thread>
 #include <vector>
 
 
+#include <gsl/gsl_randist.h>
 #include "omp.h"
 
 
@@ -39,6 +42,8 @@ arma::Mat<double> load_correlation_file(std::string &filename);
 // Save an square OTU matrix (e.g. correlation matrix) to file
 void write_out_square_otu_matrix(arma::Mat<double> &matrix, OtuTable &otu_table, std::string filename);
 
+// Set up rng environment and return default rng
+gsl_rng *get_default_rng_handle();
 
 // Convert character to integer (for commandline argument parsing)
 int int_from_optarg(const char *optarg);

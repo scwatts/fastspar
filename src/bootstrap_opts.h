@@ -2,10 +2,6 @@
 #define __BOOTSTRAP_OPTS_H__
 
 
-#include <fstream>
-#include <thread>
-
-
 #include <getopt.h>
 
 

@@ -2,10 +2,6 @@
 #define __EXACT_PVALUE_OPTS_H__
 
 
-#include <fstream>
-#include <thread>
-
-
 #include <getopt.h>
 
 

@@ -21,42 +21,69 @@ arma::Mat<double> get_bootstrap(OtuTable &otu_table, gsl_rng *p_rng) {
 }
 
 
-#if defined(FASTSPAR_CPACKAGE)
-int main(int argc, char **argv) {
-    // Get commandline arguments
-    BootstrapOptions bootstrap_options = get_commandline_arguments(argc, argv);
-
+void get_and_write_bootstraps(OtuTable &otu_table, unsigned int bootstrap_number, std::string prefix, unsigned int threads) {
     // OpenMP function from omp.h. This sets the number of threads in a more reliable way but also ignores OMP_NUM_THREADS
-    omp_set_num_threads(bootstrap_options.threads);
+    omp_set_num_threads(threads);
 
     // Set up rng environment and seed
-    const gsl_rng_type * rng_type;
-    gsl_rng_env_setup();
-    // gsl_rng_default is a global
-    rng_type = gsl_rng_default;
-    gsl_rng * p_rng = gsl_rng_alloc(rng_type);
-    gsl_rng_set(p_rng, time(NULL));
-
-    // Load the OTU table from file
-    printf("Loading OTU count table\n");
-    OtuTable otu_table;
-    otu_table.load_otu_file(bootstrap_options.otu_filename);
+    gsl_rng *p_rng = get_default_rng_handle();
 
     // Get specified number of bootstrap samples
     printf("Generating bootstrapped samples\n");
 #pragma omp parallel for schedule(static, 1)
-    for (unsigned int i = 0; i < bootstrap_options.bootstrap_number; ++i) {
+    for (unsigned int i = 0; i < bootstrap_number; ++i) {
         // Get the bootstrap
         arma::Mat<double> bootstrap = get_bootstrap(otu_table, p_rng);
 
         // Transpose matrix in place before writing out
         printf("\tWriting out bootstrapped %i\n", i);
         arma::inplace_trans(bootstrap);
-        std::string bootstrap_filename = bootstrap_options.bootstrap_prefix + "_"  + std::to_string(i) + ".tsv";
-        write_out_square_otu_matrix(bootstrap, otu_table, bootstrap_filename);
+        std::string bootstrap_filename = prefix + "_"  + std::to_string(i) + ".tsv";
+        write_out_bootstrap_table(bootstrap, otu_table.otu_ids, bootstrap_filename);
     }
 
     // Free rng memory
     gsl_rng_free(p_rng);
+}
+
+
+void write_out_bootstrap_table(arma::Mat<double> &bootstrap, std::vector<std::string> otu_ids, std::string filepath) {
+    // Get file handle
+     FILE *filehandle = fopen(filepath.c_str(), "w");
+
+    // Write out header
+    fprintf(filehandle, "#OTU ID");
+    for (unsigned int i = 0; i < bootstrap.n_cols; ++i) {
+        fprintf(filehandle, "\tbs_%u", i);
+    }
+    fprintf(filehandle, "\n");
+
+    // Write out values
+    for (unsigned int i = 0; i < bootstrap.n_rows; ++i) {
+        for (unsigned int j = 0; j < bootstrap.n_cols; ++j) {
+            // Write the OTU id as first field in row
+            if (j == 0) {
+                fprintf(filehandle, "%s", otu_ids[i].c_str());
+            }
+            fprintf(filehandle, "\t%0.4f", bootstrap(i, j));
+        }
+        fprintf(filehandle, "\n");
+    }
+}
+
+
+#if defined(FASTSPAR_CPACKAGE)
+int main(int argc, char **argv) {
+    // Get commandline arguments
+    BootstrapOptions bootstrap_options = get_commandline_arguments(argc, argv);
+
+    // Load the OTU table from file
+    printf("Loading OTU count table\n");
+    OtuTable otu_table;
+    otu_table.load_otu_file(bootstrap_options.otu_filename);
+
+    // Generate bootstraps
+    get_and_write_bootstraps(otu_table, bootstrap_options.bootstrap_number, bootstrap_options.bootstrap_prefix, bootstrap_options.threads);
+
 }
 #endif

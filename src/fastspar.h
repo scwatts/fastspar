@@ -3,11 +3,7 @@
 
 
 #include <cmath>
-#include <thread>
 #include <time.h>
-
-
-#include <gsl/gsl_randist.h>
 
 
 #include "common.h"
@@ -46,7 +42,7 @@ struct FastSpar {
 
 
     // Construct FastSpar with a given otu_table and other parameters
-    FastSpar(const OtuTable *_otu_table, unsigned int _iterations, unsigned int _exclusion_iterations, unsigned int _exclusion_threshold, gsl_rng *_p_rng, unsigned int _threads);
+    FastSpar(const OtuTable *_otu_table, unsigned int _iterations, unsigned int _exclusion_iterations, unsigned int _exclusion_threshold, unsigned int _threads);
 
     // Infer correlation and covariance for n iterations
     void infer_correlation_and_covariance();
