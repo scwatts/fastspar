@@ -86,6 +86,12 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
+
+# If we're not using the Armadillo wrapper, set macro as described in documentation
+@ARMA_DONT_USE_WRAPPER_TRUE@am__append_1 = -DARMA_DONT_USE_WRAPPER
+
+# Compile static binary
+@STATIC_COMPILE_TRUE@am__append_2 = -static
 bin_PROGRAMS = fastspar$(EXEEXT) fastspar_bootstrap$(EXEEXT) \
 	fastspar_exactpvalues$(EXEEXT) fastspar_reduce$(EXEEXT)
 subdir = src
@@ -222,7 +228,6 @@ ECHO_T = @ECHO_T@
 EXEEXT = @EXEEXT@
 F77 = @F77@
 FFLAGS = @FFLAGS@
-HDF5 = @HDF5@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
@@ -295,7 +300,8 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 
 # Compiler flags
-AM_CXXFLAGS = -std=c++11 -Wall -Wextra -fopenmp
+AM_CXXFLAGS = -std=c++11 -Wall -Wextra -fopenmp $(am__append_1) \
+	$(am__append_2)
 AM_FFLAGS = -Wall -Wextra
 fastspar_SOURCES = fastspar.cpp fastspar_opts.cpp common.cpp
 fastspar_bootstrap_SOURCES = bootstrap.cpp bootstrap_opts.cpp common.cpp
