@@ -59,18 +59,18 @@ struct FastSparIteration {
     unsigned int exclusion_threshold;
 
     // Estimated fractions of OTUs
-    arma::Mat<double> fractions;
+    arma::Mat<double> fraction_estimates;
     // Variance of estimated OTU fractions
-    arma::Mat<double> variance;
+    arma::Mat<double> fraction_variance;
 
     // List of highly OTU pairs excluded in this iteration and number of components remaining
-    std::vector<arma::uword> excluded;
+    std::vector<arma::uword> excluded_pairs;
     unsigned int components_remaining;
 
+    // Modifier matrix (lhs in dgesv)
+    arma::Mat<double> mod;
     // Basis variance vector
     arma::Col<double> basis_variance;
-    // Modifier matrix
-    arma::Mat<double> mod;
 
     // Correlation and covariance for this iteration
     arma::Mat<double> basis_correlation;
@@ -84,10 +84,10 @@ struct FastSparIteration {
     void estimate_component_fractions(gsl_rng *p_rng);
 
     // Calculate the log ratio variance of the estimated fractions
-    void calculate_log_ratio_variance();
+    void calculate_fraction_log_ratio_variance();
 
-    // Calcaulte the component variance
-    void calculate_component_variance();
+    // Calcaulte the basis variance
+    void calculate_basis_variance();
 
     // Calculate the basis correlation and covariance
     void calculate_correlation_and_covariance();
