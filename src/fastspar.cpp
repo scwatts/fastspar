@@ -1,6 +1,7 @@
 #include "fastspar.h"
 
 
+extern "C" void openblas_set_num_threads(int num_threads);
 
 
 ///////////////////////////////
@@ -9,6 +10,9 @@
 
 #if defined(FASTSPAR_CPACKAGE)
 int main(int argc, char **argv) {
+    // Set the number of threads openblas uses to 1
+    openblas_set_num_threads(1);
+
     // Get commandline options
     FastsparOptions fastspar_options = get_commandline_arguments(argc, argv);
 
