@@ -3,7 +3,7 @@
 
 void print_help() {
     fprintf(stderr, "Program: FastSpar exact p-values (c++ implementation of SparCC)\n");
-    fprintf(stderr, "Version 0.1a\n");
+    fprintf(stderr, "Version 0.0.3\n");
     fprintf(stderr, "Contact: Stephen Watts (s.watts2@student.unimelb.edu.au)\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "Usage:\n");
@@ -29,7 +29,7 @@ void print_help() {
 
 void print_version() {
     fprintf(stderr, "Program: FastSpar exact p-values (c++ implementation of SparCC)\n");
-    fprintf(stderr, "Version: 0.1a\n");
+    fprintf(stderr, "Version: 0.0.3\n");
     fprintf(stderr, "Contact: Stephen Watts (s.watts2@student.unimelb.edu.au)\n");
 }
 

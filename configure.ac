@@ -1,5 +1,5 @@
 # Initialisation
-AC_INIT([fastspar], [0.0.2], [step.wat@gmail.com])
+AC_INIT([fastspar], [0.0.3], [step.wat@gmail.com])
 AM_INIT_AUTOMAKE([foreign -Wall -Werror])
 
 
