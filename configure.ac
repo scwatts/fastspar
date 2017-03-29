@@ -12,13 +12,12 @@ AC_ARG_ENABLE([static-compile], AS_HELP_STRING([--enable-static-compile], [Compi
 
 AC_ARG_ENABLE([arma-wrapper], AS_HELP_STRING([--disable-arma-wrapper], [Disables use of the Armadillo wrapper]),
 	[case "${enableval}" in
-	  no)  arma_wrapper=true;;
 	  *)   arma_wrapper=false;;
 	esac], [arma_wrapper=true])
 
 
 # Check that the Armadillo runtime library is installed if we need it
-AS_IF([test "x$static_compile" = "xfalse"], [AC_CHECK_LIB(armadillo, main, [LIBS="$LIBS -larmadillo"], AC_MSG_ERROR(could not find the library Armadillo))])
+AS_IF([test "x$static_compile" = "xfalse" && test "x$arma_wrapper" = "xtrue"], [AC_CHECK_LIB(armadillo, main, [LIBS="$LIBS -larmadillo"], AC_MSG_ERROR(could not find the library Armadillo))])
 
 # Set conditionals to use in the Makefile.am
 AM_CONDITIONAL([ARMA_DONT_USE_WRAPPER], [test "x$static_compile" = "xtrue" || test "x$arma_wrapper" = "xfalse"])
