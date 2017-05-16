@@ -69,6 +69,8 @@ void write_out_bootstrap_table(arma::Mat<double> &bootstrap, std::vector<std::st
         }
         fprintf(filehandle, "\n");
     }
+
+    fclose(filehandle);
 }
 
 
