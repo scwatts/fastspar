@@ -85,7 +85,7 @@ bool continue_exit_prompt() {
     std::string prompt_message("Do you want to continue [Y/n]?");
 
     // Print message and get response
-    fprintf(stderr, prompt_message.c_str());
+    fprintf(stderr, "%s", prompt_message.c_str());
     std::getline(std::cin, response);
 
     // Process response
