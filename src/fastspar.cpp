@@ -34,16 +34,18 @@ int main(int argc, char **argv) {
     }
 
     // Print warnings
-    fprintf(stderr, "\nWarning: the following OTUs have only one unique permutation and it is recommended to remove them from this analysis:\n");
-    for (auto &i : invariant_otus) {
-        fprintf(stderr, "\t%s (row %d)\n", otu_table.otu_ids[i].c_str(), i);
-    }
-    fprintf(stderr, "\n");
+    if (! invariant_otus.empty()) {
+        fprintf(stderr, "\nWarning: the following OTUs have only one unique permutation and it is recommended to remove them from this analysis:\n");
+        for (auto &i : invariant_otus) {
+            fprintf(stderr, "\t%s (row %d)\n", otu_table.otu_ids[i].c_str(), i);
+        }
+        fprintf(stderr, "\n");
 
-    // Prompt user for continue
-    if (! fastspar_options.assume_yes) {
-        if (continue_exit_prompt() == false) {
-            return 0;
+        // Prompt user for continue
+        if (! fastspar_options.assume_yes) {
+            if (continue_exit_prompt() == false) {
+                return 0;
+            }
         }
     }
 
