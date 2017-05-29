@@ -10,6 +10,9 @@ extern "C" void openblas_set_num_threads(int num_threads);
 
 #if defined(FASTSPAR_CPACKAGE)
 int main(int argc, char **argv) {
+    // Starting message
+    fprintf(stdout, "Starting FastSpar\n");
+
     // Set the number of threads openblas uses to 1
     openblas_set_num_threads(1);
 
@@ -20,24 +23,79 @@ int main(int argc, char **argv) {
     OtuTable otu_table;
     otu_table.load_otu_file(fastspar_options.otu_filename);
 
+
+    // Check that OTUs have variance in their counts
+    std::vector<int> invariant_otus;
+    for (int i = 0; i < otu_table.otu_number; ++i) {
+        arma::Col<double> unique_counts = arma::unique(otu_table.counts.col(i));
+        if (unique_counts.n_elem == 1) {
+            invariant_otus.push_back(i);
+        }
+    }
+
+    // Print warnings
+    fprintf(stderr, "\nWarning: the following OTUs have only one unique permutation and it is recommended to remove them from this analysis:\n");
+    for (auto &i : invariant_otus) {
+        fprintf(stderr, "\t%s (row %d)\n", otu_table.otu_ids[i].c_str(), i);
+    }
+    fprintf(stderr, "\n");
+
+    // Prompt user for continue
+    if (! fastspar_options.assume_yes) {
+        if (continue_exit_prompt() == false) {
+            return 0;
+        }
+    }
+
+
     // Initialise a FastSpar object
     FastSpar fastspar(&otu_table, fastspar_options.iterations, fastspar_options.exclude_iterations,
                       fastspar_options.threshold, fastspar_options.threads);
 
+
     // Run FastSpar iterations
-    printf("Running SparCC iterations\n");
+    fprintf(stdout, "Running SparCC iterations\n");
     fastspar.infer_correlation_and_covariance();
 
     // Calculate the final FastSpar correlation and covariances
-    printf("Calculating final SparCC correlations and covariances\n");
+    fprintf(stdout, "Calculating final SparCC correlations and covariances\n");
     fastspar.calculate_median_correlation_and_covariance();
 
     // Write median correlation and covariance matrices
-    printf("Writing out median correlation and covariance matrices\n");
+    fprintf(stdout, "Writing out median correlation and covariance matrices\n");
     write_out_square_otu_matrix(fastspar.median_correlation, otu_table, fastspar_options.correlation_filename);
     write_out_square_otu_matrix(fastspar.median_covariance, otu_table, fastspar_options.covariance_filename);
+
+    return 0;
 }
 #endif
+
+
+
+
+///////////////////////////////
+//      Misc Function(s)     //
+///////////////////////////////
+// Continue or exit prompt
+bool continue_exit_prompt() {
+    // Define output and input strings
+    std::string response;
+    std::string prompt_message("Do you want to continue [Y/n]?");
+
+    // Print message and get response
+    fprintf(stderr, prompt_message.c_str());
+    std::getline(std::cin, response);
+
+    // Process response
+    if (response.front() == 'Y' || response.front() == 'y' || response.empty()) {
+        return true;
+    } else if (response.front() == 'N' || response.front() == 'n') {
+        return false;
+    } else {
+        fprintf(stderr, "Did not recognise %s (accepting 'y' or 'n')\n", response.c_str());
+        return false;
+    }
+}
 
 
 
@@ -94,7 +152,7 @@ void FastSpar::infer_correlation_and_covariance() {
     for (unsigned int i = 0; i < iterations; ++i) {
         // Create a FastSparIteration object
         FastSparIteration fastspar_iteration(otu_table, exclusion_iterations, exclusion_threshold);
-        printf("\tRunning iteration: %i\n", i + 1);
+        fprintf(stdout, "\tRunning iteration: %i\n", i + 1);
 
         // TODO: Refactor as a method for FastSparIterations
 

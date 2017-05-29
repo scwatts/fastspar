@@ -97,4 +97,8 @@ struct FastSparIteration {
 };
 
 
+// Continue or exit prompt
+bool continue_exit_prompt();
+
+
 #endif

@@ -25,6 +25,8 @@ void print_help() {
     fprintf(stderr, "                Correlation strength exclusion threshold (0.1 default)\n");
     fprintf(stderr, "  -t <int>, --threads <int>\n");
     fprintf(stderr, "                Number of threads (1 default)\n");
+    fprintf(stderr, "  -y, --yes\n");
+    fprintf(stderr, "                Assume yes for prompts (false default)\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "Other:\n");
     fprintf(stderr, "  -h        --help\n");
@@ -55,6 +57,7 @@ FastsparOptions get_commandline_arguments(int argc, char **argv) {
             {"exclude_iterations", required_argument, NULL, 'x'},
             {"threshold", required_argument, NULL, 'e'},
             {"threads", required_argument, NULL, 't'},
+            {"yes", no_argument, NULL, 'y'},
             {"version", no_argument, NULL, 'v'},
             {"help", no_argument, NULL, 'h'},
             {NULL, 0, 0, 0}
@@ -67,7 +70,7 @@ FastsparOptions get_commandline_arguments(int argc, char **argv) {
         int c;
 
         // Parser
-        c = getopt_long(argc, argv, "hvc:r:a:i:x:e:t:", long_options, &option_index);
+        c = getopt_long(argc, argv, "hvc:r:a:i:x:e:t:y", long_options, &option_index);
 
         // If no more arguments to parse, break
         if (c == -1) {
@@ -96,6 +99,9 @@ FastsparOptions get_commandline_arguments(int argc, char **argv) {
                 break;
             case 't':
                 fastspar_options.threads = int_from_optarg(optarg);
+                break;
+            case 'y':
+                fastspar_options.assume_yes = true;
                 break;
             case 'v':
                 print_version();
