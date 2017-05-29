@@ -3,7 +3,7 @@
 
 void print_help() {
     fprintf(stderr, "Program: Filter correlation and p-value table. Output as sparse matrices\n");
-    fprintf(stderr, "Version 0.0.3\n");
+    fprintf(stderr, "Version 0.0.4\n");
     fprintf(stderr, "Contact: Stephen Watts (s.watts2@student.unimelb.edu.au)\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "Usage:\n");
@@ -27,7 +27,7 @@ void print_help() {
 
 void print_version() {
     fprintf(stderr, "Program: Filter correlation and p-value table. Output as sparse matrices\n");
-    fprintf(stderr, "Version: 0.0.3\n");
+    fprintf(stderr, "Version: 0.0.4\n");
     fprintf(stderr, "Contact: Stephen Watts (s.watts2@student.unimelb.edu.au)\n");
 }
 
