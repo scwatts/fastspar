@@ -1,23 +1,25 @@
 # FastSpar
-FastSpar is a c++ implementation of the SparCC algorithm published here: Friedman, J. & Alm, E. J. Inferring correlation networks from genomic survey data. PLoS Comput. Biol. 8, e1002687 (2012). FastSpar is up to several thousand times faster than the original Python2 implementation and uses much less memory.
+FastSpar is a C++ implementation of the [SparCC](https://bitbucket.org/yonatanf/sparcc) algorithm [published](http://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1002687) by Jonathan Friedman and Eric Alm. FastSpar is up to several thousand times faster than the original Python2 implementation and uses much less memory. FastSpar offers threading support and an *p*-value estimator which accounts for the possibility of repeating data permutations (see [this](https://arxiv.org/pdf/1603.05766.pdf) paper for further details). Code for the *p*-value estimator was adopted from the permp function from the [statmod](https://cran.r-project.org/web/packages/statmod/index.html) R package and from an example provided by [Scott Ritchie](https://github.com/sritchie73).
 
-Many of the processes of FastSpar were ported from original SparCC implementation found here: https://bitbucket.org/yonatanf/sparcc
 
-Additionally, SparCC's method of p-value has been replaced with exact p-value calculation. This code was adopted from the permp function from the statmod R package and from an example provided by Scott Ritchie. The advantages of this alternative method are discussed here: Phipson, B. & Smyth, G. K. Permutation p-values should never be zero: calculating exact p-values when permutations are randomly drawn Stat Appl Genet Mol Biol. 9: Article 39 (2010).
-
-FastSpar is currently in development and may lack certain features expected in complete programs. While FastSpar generally works without issue, extra care must be taken to ensure that correctly formatted input data are provided.
+## Citation
+If you use this tool, please cite the FastSpar preprint and original SparCC paper:
+* [Watts, S.C., Ritchie, S.C., Inouye, M. & Holt, K.E. (2018). FastSpar: Rapid and scalable correlation estimation for compositional data. bioRxiv doi: 10.1101/222190.](https://www.biorxiv.org/content/early/2018/03/03/272583)
+* [Friedman, J. & Alm, E.J. (2017). Inferring correlation networks from genomic survey data. PLoS Comput. Biol. 8, e1002687.](http://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1002687)
 
 
 ## Installing
-FastSpar can be installed using a package containing pre-compiled binaries or installed from source. If running Ubuntu, it is recommended you install using the package.
+FastSpar can be installed via prebuilt distribution packages, from source, or using statically linked binaries.
 
 
 ### GNU/Linux
 For most 64-bit linux distributions (e.g. Ubuntu, Debian, RedHat, etc) the easiest way to obtain FastSpar is via statically compiled binaries on the GitHub release page. These binaries can be downloaded and run immediately without any setup as they have no dependencies.
 
+Alternative, there are also Ubuntu and Debian packages available.
+
 
 ### macOS
-To install FastSpar and required dependencies, homebrew can be used. The GitHub repository contains a brew recipe which handles dependency resolution, compilation and installation for FastSpar. To use the brew recipe, the below command can be run:
+On macOS, FastSpar can be installed using homebrew. The GitHub repository contains a brew recipe which handles dependency resolution, compilation and installation for FastSpar. To use the brew recipe (on systems with homebrew installed), the below command can be run:
 ```bash
 brew install https://raw.githubusercontent.com/scwatts/fastspar/master/scripts/fastspar.rb
 ```
@@ -25,7 +27,7 @@ brew install https://raw.githubusercontent.com/scwatts/fastspar/master/scripts/f
 ### Compiling from source
 Compilation from source requires these libraries and software:
 ```
-c++11 (gcc-4.9.0+, clang-4.9.0+, etc)
+C++11 (gcc-4.9.0+, clang-4.9.0+, etc)
 OpenMP 4.0+
 Gfortran
 Armadillo 6.7+
@@ -36,7 +38,7 @@ GNU getopt
 GNU make
 ```
 
-After meeting the above requirements, install FastSpar from source can be done with these commands:
+After meeting the above requirements, installing FastSpar from source can be done with these commands:
 ```bash
 git clone https://github.com/scwatts/fastspar.git
 cd fastspar
@@ -44,7 +46,7 @@ cd fastspar
 make
 make install
 ```
-Once done, the FastSpar executables can be run from the command line
+Once completed, the FastSpar executables can be run from the command line....
 
 
 ## Usage
@@ -58,7 +60,7 @@ fastspar --otu_table fake_data.txt --correlation median_correlation.tsv --covari
 The number of iterations (each iteration re-estimated fractions by drawing from a dirichlet distrubition) can also be changed. The number of exclusion iterations (the number of times highly correlation OTU pairs are discovered and excluded) can also be tweaked. Here's an example:
 
 ```bash
-fastspar --iterations 500 --exclude_iterations 20 --otu_table fake_data.txt --correlation median_correlation.tsv --covariance median_covariance.tsv
+fastspar --iterations 50 --exclude_iterations 20 --otu_table fake_data.txt --correlation median_correlation.tsv --covariance median_covariance.tsv
 ```
 
 Further, the minimum threshold to exclude correlated OTU pairs can be increased:
@@ -67,8 +69,8 @@ fastspar --threshold 0.2 --otu_table fake_data.txt --correlation median_correlat
 ```
 
 
-### Calculation of exact p-values
-To calculate the p-value of the infered correlations, bootstraping can be performed. This process involves infering correlation from random permutations of the original OTU count data. The p-values are then calculated from the bootstrap correlations. In the below example, we calculate p-values from 1000 bootstrap correlations.
+### Calculation of exact *p*-values
+To calculate the *p*-value of the infered correlations, bootstraping can be performed. This process involves infering correlation from random permutations of the original OTU count data. The *p*-values are then calculated from the bootstrap correlations. In the below example, we calculate *p*-values from 1000 bootstrap correlations.
 
 
 First we generate the 1000 boostrap counts:
@@ -85,7 +87,7 @@ mkdir bootstrap_correlation
 parallel fastspar --otu_table {} --correlation bootstrap_correlation/cor_{/} --covariance bootstrap_correlation/cov_{/} -i 5 ::: bootstrap_counts/*
 ```
 
-From these correlations, the p-values are then calculated:
+From these correlations, the *p*-values are then calculated:
 ```bash
 fastspar_exactpvalues --otu_table fake_data.txt --correlation median_correlation.tsv --prefix bootstrap_correlation/cor_fake_data_ --permutations 1000 --outfile pvalues.tsv
 ```
@@ -94,9 +96,8 @@ fastspar_exactpvalues --otu_table fake_data.txt --correlation median_correlation
 ### Threading
 If FastSpar is compiled with OpenMP, threading can be used by invoking `--threads <thread_number>` at the command line for several tools:
 ```bash
-fastspar --otu_table fake_data.txt --correlation median_correlation.tsv --covariance median_covariance.tsv --iterations 10000 --threads 32
+fastspar --otu_table fake_data.txt --correlation median_correlation.tsv --covariance median_covariance.tsv --iterations 50 --threads 10
 ```
 
-
 ## License
-This project is licensed under GNU GPLv3
+GNU GPLv3
