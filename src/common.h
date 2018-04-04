@@ -14,6 +14,7 @@
 
 
 #include "config.h"
+#include "version.h"
 
 
 #if defined(FASTSPAR_RPACKAGE)
