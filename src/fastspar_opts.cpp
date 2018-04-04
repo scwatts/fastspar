@@ -21,7 +21,7 @@ void print_help() {
     fprintf(stderr, "                Number of interations to perform (50 default)\n");
     fprintf(stderr, "  -x <int>, --exclusion_iterations <int>\n");
     fprintf(stderr, "                Number of exclusion interations to perform (10 default)\n");
-    fprintf(stderr, "  -e <float>, --exclusion_iterations <float>\n");
+    fprintf(stderr, "  -e <float>, --threshold <float>\n");
     fprintf(stderr, "                Correlation strength exclusion threshold (0.1 default)\n");
     fprintf(stderr, "  -t <int>, --threads <int>\n");
     fprintf(stderr, "                Number of threads (1 default)\n");
