@@ -9,7 +9,7 @@ If you use this tool, please cite the FastSpar preprint and original SparCC pape
 
 
 ## Installing
-FastSpar can be installed via prebuilt distribution packages, from source, or using statically linked binaries.
+FastSpar can be installed via pre-compiled binaries or from source.
 
 
 ### GNU/Linux
@@ -36,12 +36,14 @@ OpenBLAS
 GNU Scientific Library 2.1+
 GNU getopt
 GNU make
+GNU autoconf
 ```
 
 After meeting the above requirements, installing FastSpar from source can be done with these commands:
 ```bash
 git clone https://github.com/scwatts/fastspar.git
 cd fastspar
+./autogen.sh
 ./configure --prefix=/usr/
 make
 make install
