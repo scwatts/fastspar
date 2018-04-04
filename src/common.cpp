@@ -1,6 +1,9 @@
 #include "common.h"
 
 
+std::vector<std::string> PERMITTED_OTU_HEADERS = {"#OTU ID", "#OTU_ID", "OTU ID", "OTU_ID", "OTU_id", "OTU id"};
+
+
 // Load an OTU table from file
 void OtuTable::load_otu_file(std::string filename) {
     // TODO: Catch now filename or non-existent file
@@ -16,14 +19,22 @@ void OtuTable::load_otu_file(std::string filename) {
     // Process header
     std::getline(otu_file, line);
     line_stream.str(line);
+    // Check that input file is a BIOM tsv format OTU table
+    std::getline(line_stream, ele, '\t');
+    bool valid_input = false;
+    for (auto& permitted_header : PERMITTED_OTU_HEADERS) {
+        if (ele == permitted_header) {
+            valid_input = true;
+            break;
+        }
+    }
+    if (!valid_input) {
+        const char error_msg[] = "error: Input file %s doesn't appear to be in BIOM tsv format. Expected '#OTU ID' in header\n";
+        fprintf(stderr, error_msg, filename.c_str());
+        exit(1);
+    }
     // Iterate header columns
     while(std::getline(line_stream, ele, '\t')) {
-        //TODO: Add assertion here?
-        // Skip the #OTU ID column (first column)
-        if (ele == "#OTU ID") {
-            continue;
-        }
-        // Store samples
         sample_names.push_back(ele);
         ++sample_number;
     }
