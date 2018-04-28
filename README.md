@@ -28,7 +28,7 @@ If you use this tool, please cite the `FastSpar` preprint and original SparCC pa
 
 
 ## Requirements
-There are no requirements for using the pre-compiled static binaries on 64-bit linux distributions. Otherwise, there are several libraries which are required for building and running. For further information, see [Compiling from source](#compiling-from-source).
+There are no requirements for using the pre-compiled static binaries on 64-bit linux distributions. Otherwise, there are several libraries which are required for building and running dynamically linked binaries. For further information, see [Compiling from source](#compiling-from-source).
 
 
 ## Installing
@@ -92,8 +92,7 @@ fastspar --threshold 0.2 --otu_table fake_data.tsv --correlation median_correlat
 
 
 ### Calculation of exact *p*-values
-There are several methods to calculate *p*-values for inferred correlations. Here we have elected to use a robust permutation based method. This process involves infering correlation from random permutations of the original OTU count data. The magnitude of each *p*-value is related to how often a more extreme correlation is observed for randomly permutated data. In the below example, we calculate *p*-values from 1000 bootstrap correlations.
-
+There are several methods to calculate *p*-values for inferred correlations. Here we have elected to use a robust permutation based approach. This process involves infering correlation from random permutations of the original OTU count data. The magnitude of each *p*-value is related to how often a more extreme correlation is observed for randomly permutated data. In the below example, we calculate *p*-values from 1000 bootstrap correlations.
 
 First we generate the 1000 boostrap counts:
 

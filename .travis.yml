@@ -1,0 +1,32 @@
+language: cpp
+compiler: g++
+dist: trusty
+
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - cmake
+      - dh-autoreconf
+      - gfortran
+      - g++-5
+      - libgfortran-5-dev
+      - libgsl0-dev
+      - libopenblas-dev
+      - liblapack-dev
+
+branches:
+  only:
+    master
+
+before_install:
+  - wget https://sourceforge.net/projects/arma/files/armadillo-8.500.0.tar.xz
+  - tar -Jxvf armadillo-8.500.0.tar.xz
+  - (cd armadillo-8.500.0/ && ./configure && cmake && sudo make install)
+
+script:
+  - export CXX='g++-5'
+  - ./autogen.sh
+  - ./configure
+  - make -j4
