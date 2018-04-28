@@ -5,6 +5,7 @@ class Fastspar < Formula
   sha256 "c4cc7682720f566da7587e555b58a688671a97235d00c33d042a7f2cd6cef20a"
   head "https://github.com/scwatts/fastspar.git"
 
+  depends_on "autoconf" => :build
   depends_on "armadillo" => :run
   depends_on "gsl" => :run
   depends_on "gnu-getopt" => :run
@@ -13,6 +14,7 @@ class Fastspar < Formula
   needs :openmp
 
   def install
+    system "./autogen.sh"
     system "./configure", "CC=gcc-6",
                           "CXX=g++-6",
                           "LDFLAGS=-L#{HOMEBREW_PREFIX}/lib/openblas/",
