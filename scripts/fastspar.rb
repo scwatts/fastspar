@@ -1,8 +1,8 @@
 class Fastspar < Formula
   desc " Rapid and scalable correlation estimation for compositional data"
   homepage "https://github.com/scwatts/fastspar"
-  url "https://github.com/scwatts/fastspar/archive/v0.0.5.tar.gz"
-  sha256 "c4cc7682720f566da7587e555b58a688671a97235d00c33d042a7f2cd6cef20a"
+  url "https://github.com/scwatts/fastspar/archive/v0.0.6.tar.gz"
+  sha256 "07dc76479d4a8aa30ba6d69e20b50241bfbbcdd2f8fd2858b9f5b594bc2cba98"
   head "https://github.com/scwatts/fastspar.git"
 
   depends_on "autoconf" => :build
