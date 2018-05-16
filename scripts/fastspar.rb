@@ -6,6 +6,7 @@ class Fastspar < Formula
   head "https://github.com/scwatts/fastspar.git"
 
   depends_on "autoconf" => :build
+  depends_on "automake" => :build
   depends_on "armadillo" => :run
   depends_on "gsl" => :run
   depends_on "gnu-getopt" => :run
