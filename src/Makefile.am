@@ -25,10 +25,10 @@ libfastspar_bootstrap_a_SOURCES = $(fastspar_bootstrap_fps)
 libfastspar_exactpvalues_a_SOURCES = $(fastspar_exactpvalues_fps)
 libfastspar_reduce_a_SOURCES = $(fastspar_reduce_fps)
 
-libfastspar_a_CXXFLAGS = -DLIBRARY
-libfastspar_bootstrap_a_CXXFLAGS = -DLIBRARY
-libfastspar_exactpvalues_a_CXXFLAGS = -DLIBRARY
-libfastspar_reduce_a_CXXFLAGS = -DLIBRARY
+libfastspar_a_CXXFLAGS = -DLIBRARY $(AM_CXXFLAGS)
+libfastspar_bootstrap_a_CXXFLAGS = -DLIBRARY $(AM_CXXFLAGS)
+libfastspar_exactpvalues_a_CXXFLAGS = -DLIBRARY $(AM_CXXFLAGS)
+libfastspar_reduce_a_CXXFLAGS = -DLIBRARY $(AM_CXXFLAGS)
 
 # ELFs
 bin_PROGRAMS = fastspar fastspar_bootstrap fastspar_exactpvalues fastspar_reduce
