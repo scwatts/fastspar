@@ -21,12 +21,12 @@ arma::Mat<double> get_bootstrap(OtuTable &otu_table, gsl_rng *p_rng) {
 }
 
 
-void get_and_write_bootstraps(OtuTable &otu_table, unsigned int bootstrap_number, std::string prefix, unsigned int threads) {
+void get_and_write_bootstraps(OtuTable &otu_table, unsigned int bootstrap_number, std::string prefix, unsigned int threads, unsigned int seed) {
     // OpenMP function from omp.h. This sets the number of threads in a more reliable way but also ignores OMP_NUM_THREADS
     omp_set_num_threads(threads);
 
     // Set up rng environment and seed
-    gsl_rng *p_rng = get_default_rng_handle();
+    gsl_rng *p_rng = get_default_rng_handle(seed);
 
     // Get specified number of bootstrap samples
     printf("Generating bootstrapped samples\n");
@@ -85,7 +85,7 @@ int main(int argc, char **argv) {
     otu_table.load_otu_file(bootstrap_options.otu_filename);
 
     // Generate bootstraps
-    get_and_write_bootstraps(otu_table, bootstrap_options.bootstrap_number, bootstrap_options.bootstrap_prefix, bootstrap_options.threads);
+    get_and_write_bootstraps(otu_table, bootstrap_options.bootstrap_number, bootstrap_options.bootstrap_prefix, bootstrap_options.threads, bootstrap_options.seed);
 
 }
 #endif

@@ -7,15 +7,17 @@ void print_help() {
     fprintf(stderr, "Contact: Stephen Watts (s.watts2@student.unimelb.edu.au)\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "Usage:\n");
-    fprintf(stderr, "  bootstraps --otu_table <of> --number <n> --prefix <p>\n");
+    fprintf(stderr, "  bootstraps --otu_table <path> --number <int> --prefix <str>\n");
     fprintf(stderr, "\n");
-    fprintf(stderr, "  -c/--otu_table <of>   OTU input table\n");
-    fprintf(stderr, "  -n/--number <n>       Number of bootstrap samples to generate\n");
-    fprintf(stderr, "  -p/--prefix <p>       Prefix out bootstrap output files\n");
+    fprintf(stderr, "  -c/--otu_table <path>    OTU input table\n");
+    fprintf(stderr, "  -n/--number <path>       Number of bootstrap samples to generate\n");
+    fprintf(stderr, "  -p/--prefix <str>        Prefix out bootstrap output files\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "Options:\n");
-    fprintf(stderr, "  -t <th>, --threads <th>\n");
+    fprintf(stderr, "  -t <int>, --threads <int>\n");
     fprintf(stderr, "                        Number of threads (1 default)\n");
+    fprintf(stderr, "  -s <int>, --seed <int>\n");
+    fprintf(stderr, "                Random number generator seed (default: 1)\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "Other:\n");
     fprintf(stderr, "  -h        --help\n");
@@ -41,8 +43,9 @@ BootstrapOptions get_commandline_arguments(int argc, char **argv) {
         {
             {"otu_table", required_argument, NULL, 'c'},
             {"number", required_argument, NULL, 'n'},
-            {"threads", required_argument, NULL, 't'},
             {"prefix", required_argument, NULL, 'p'},
+            {"threads", required_argument, NULL, 't'},
+            {"seed", required_argument, NULL, 's'},
             {"version", no_argument, NULL, 'v'},
             {"help", no_argument, NULL, 'h'},
             {NULL, 0, 0, 0}
@@ -55,7 +58,7 @@ BootstrapOptions get_commandline_arguments(int argc, char **argv) {
         int c;
 
         // Parser
-        c = getopt_long(argc, argv, "hvc:p:n:t:", long_options, &option_index);
+        c = getopt_long(argc, argv, "hvc:p:n:t:s:", long_options, &option_index);
 
         // If no more arguments to parse, break
         if (c == -1) {
@@ -74,6 +77,9 @@ BootstrapOptions get_commandline_arguments(int argc, char **argv) {
                 break;
             case 't':
                 bootstrap_options.threads = int_from_optarg(optarg);
+                break;
+            case 's':
+                bootstrap_options.seed = int_from_optarg(optarg);
                 break;
             case 'v':
                 print_version();

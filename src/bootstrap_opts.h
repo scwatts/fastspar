@@ -14,6 +14,7 @@ struct BootstrapOptions {
 
     unsigned int bootstrap_number = 0;
     unsigned int threads = 1;
+    unsigned int seed = 1;
 };
 
 

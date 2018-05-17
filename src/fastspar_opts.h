@@ -14,6 +14,7 @@ struct FastsparOptions {
     unsigned int exclude_iterations = 10;
     float threshold = 0.1;
     unsigned int threads = 1;
+    unsigned int seed = 1;
     bool assume_yes = false;
 
     // Declare some important variables

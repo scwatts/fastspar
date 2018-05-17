@@ -1,9 +1,6 @@
 #include "fastspar.h"
 
 
-extern "C" void openblas_set_num_threads(int num_threads);
-
-
 ///////////////////////////////
 //      FastSpar entry       //
 ///////////////////////////////
@@ -12,9 +9,6 @@ extern "C" void openblas_set_num_threads(int num_threads);
 int main(int argc, char **argv) {
     // Starting message
     fprintf(stdout, "Starting FastSpar\n");
-
-    // Set the number of threads openblas uses to 1
-    openblas_set_num_threads(1);
 
     // Get commandline options
     FastsparOptions fastspar_options = get_commandline_arguments(argc, argv);
@@ -53,6 +47,7 @@ int main(int argc, char **argv) {
     // Initialise a FastSpar object
     FastSpar fastspar(&otu_table, fastspar_options.iterations, fastspar_options.exclude_iterations,
                       fastspar_options.threshold, fastspar_options.threads);
+    fastspar.p_rng = get_default_rng_handle(fastspar_options.seed);
 
 
     // Run FastSpar iterations
@@ -146,9 +141,6 @@ void FastSpar::infer_correlation_and_covariance() {
         fprintf(stderr, "The SparCC algorithm requires at least 4 components to run\n");
         exit(0);
     }
-
-    // Set up rng environment and seed
-    FastSpar::p_rng = get_default_rng_handle();
 
 #pragma omp parallel for schedule(static, 1)
     for (unsigned int i = 0; i < iterations; ++i) {

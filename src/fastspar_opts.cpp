@@ -9,24 +9,26 @@ void print_help() {
     fprintf(stderr, "Usage:\n");
     fprintf(stderr, "  fastspar [options] --otu_table <of> --correlation <rf> --covariance <vf>\n");
     fprintf(stderr, "\n");
-    fprintf(stderr, "  -c <of>, --otu_table <of>\n");
+    fprintf(stderr, "  -c <path>, --otu_table <path>\n");
     fprintf(stderr, "                OTU input OTU count table\n");
-    fprintf(stderr, "  -r <rf>, -correlation <rf>\n");
+    fprintf(stderr, "  -r <path>, -correlation <path>\n");
     fprintf(stderr, "                Correlation output table\n");
-    fprintf(stderr, "  -a <vf>, --covariance <vf>\n");
+    fprintf(stderr, "  -a <path>, --covariance <path>\n");
     fprintf(stderr, "                Covariance output table\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "Options:\n");
     fprintf(stderr, "  -i <int>, --iterations <int>\n");
-    fprintf(stderr, "                Number of interations to perform (50 default)\n");
+    fprintf(stderr, "                Number of interations to perform (default: 50)\n");
     fprintf(stderr, "  -x <int>, --exclusion_iterations <int>\n");
-    fprintf(stderr, "                Number of exclusion interations to perform (10 default)\n");
+    fprintf(stderr, "                Number of exclusion interations to perform (default: 10)\n");
     fprintf(stderr, "  -e <float>, --threshold <float>\n");
-    fprintf(stderr, "                Correlation strength exclusion threshold (0.1 default)\n");
+    fprintf(stderr, "                Correlation strength exclusion threshold (default: 0.1)\n");
     fprintf(stderr, "  -t <int>, --threads <int>\n");
-    fprintf(stderr, "                Number of threads (1 default)\n");
+    fprintf(stderr, "                Number of threads (default: 1)\n");
+    fprintf(stderr, "  -s <int>, --seed <int>\n");
+    fprintf(stderr, "                Random number generator seed (default: 1)\n");
     fprintf(stderr, "  -y, --yes\n");
-    fprintf(stderr, "                Assume yes for prompts (false default)\n");
+    fprintf(stderr, "                Assume yes for prompts (default: unset)\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "Other:\n");
     fprintf(stderr, "  -h        --help\n");
@@ -57,6 +59,7 @@ FastsparOptions get_commandline_arguments(int argc, char **argv) {
             {"exclude_iterations", required_argument, NULL, 'x'},
             {"threshold", required_argument, NULL, 'e'},
             {"threads", required_argument, NULL, 't'},
+            {"seed", required_argument, NULL, 's'},
             {"yes", no_argument, NULL, 'y'},
             {"version", no_argument, NULL, 'v'},
             {"help", no_argument, NULL, 'h'},
@@ -70,7 +73,7 @@ FastsparOptions get_commandline_arguments(int argc, char **argv) {
         int c;
 
         // Parser
-        c = getopt_long(argc, argv, "hvc:r:a:i:x:e:t:y", long_options, &option_index);
+        c = getopt_long(argc, argv, "hvc:r:a:i:x:e:t:s:y", long_options, &option_index);
 
         // If no more arguments to parse, break
         if (c == -1) {
@@ -99,6 +102,9 @@ FastsparOptions get_commandline_arguments(int argc, char **argv) {
                 break;
             case 't':
                 fastspar_options.threads = int_from_optarg(optarg);
+                break;
+            case 's':
+                fastspar_options.seed = int_from_optarg(optarg);
                 break;
             case 'y':
                 fastspar_options.assume_yes = true;

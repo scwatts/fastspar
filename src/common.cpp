@@ -137,7 +137,7 @@ void write_out_square_otu_matrix(arma::Mat<double> &matrix, OtuTable &otu_table,
 
 
 // Set up rng environment and return default rng
-gsl_rng *get_default_rng_handle() {
+gsl_rng *get_default_rng_handle(unsigned int seed) {
     // Set up rng environment and seed
     const gsl_rng_type *rng_type;
     gsl_rng_env_setup();
@@ -145,7 +145,7 @@ gsl_rng *get_default_rng_handle() {
     // gsl_rng_default is a global
     rng_type = gsl_rng_default;
     gsl_rng *p_rng = gsl_rng_alloc(rng_type);
-    gsl_rng_set(p_rng, time(NULL));
+    gsl_rng_set(p_rng, seed);
 
     return p_rng;
 }
