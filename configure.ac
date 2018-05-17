@@ -26,9 +26,11 @@ AM_CONDITIONAL([ARMA_DONT_USE_WRAPPER],
 AM_CONDITIONAL([STATIC_COMPILE],
                [test "x$static_compile" = "xtrue"])
 
-# Check required compilers
+# Check required compilers and utilities
 AC_PROG_CXX
 AC_PROG_F77
+AC_PROG_RANLIB
+AM_PROG_AR
 
 # Check dependencies
 AC_CHECK_LIB([gomp], [main],
@@ -61,5 +63,5 @@ AX_BLAS([LIBS="$BLAS_LIBS $LIBS"],
 
 # Set config headers and makefiles
 AC_CONFIG_HEADERS([config.h])
-AC_CONFIG_FILES([Makefile src/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile tests/Makefile])
 AC_OUTPUT
