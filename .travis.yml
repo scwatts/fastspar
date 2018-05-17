@@ -2,12 +2,16 @@ language: cpp
 compiler: g++
 dist: trusty
 
+
 addons:
   apt:
     sources:
       - ubuntu-toolchain-r-test
     packages:
       - cmake
+      - autoconf
+      - automake
+      - autoconf-archive
       - dh-autoreconf
       - gfortran
       - g++-5
@@ -30,3 +34,4 @@ script:
   - ./autogen.sh
   - ./configure
   - make -j4
+  - make check
