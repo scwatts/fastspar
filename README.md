@@ -54,11 +54,13 @@ OpenMP 4.0+
 Gfortran
 Armadillo 6.7+
 LAPACK
-OpenBLAS
+BLAS (OpenBLAS is recommended)
 GNU Scientific Library 2.1+
 GNU getopt
 GNU make
 GNU autoconf
+GNU autoconf-archive
+GNU m4
 ```
 
 After meeting the above requirements, cmompiling and installing `FastSpar` from source can be done by:
