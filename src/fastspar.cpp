@@ -46,9 +46,7 @@ int main(int argc, char **argv) {
 
     // Initialise a FastSpar object
     FastSpar fastspar(&otu_table, fastspar_options.iterations, fastspar_options.exclude_iterations,
-                      fastspar_options.threshold, fastspar_options.threads);
-    fastspar.p_rng = get_default_rng_handle(fastspar_options.seed);
-
+                      fastspar_options.threshold, fastspar_options.threads, fastspar_options.seed);
 
     // Run FastSpar iterations
     fprintf(stdout, "Running SparCC iterations\n");
@@ -102,12 +100,13 @@ bool continue_exit_prompt() {
 ///////////////////////////////
 
 // Initialise a FastSpar object (must be parsed a pointer to an OTU table struct and other paramters)
-FastSpar::FastSpar(const OtuTable *_otu_table, unsigned int _iterations, unsigned int _exclusion_iterations, unsigned int _exclusion_threshold, unsigned int _threads) {
+FastSpar::FastSpar(const OtuTable *_otu_table, unsigned int _iterations, unsigned int _exclusion_iterations, unsigned int _exclusion_threshold, unsigned int _threads, unsigned int seed) {
     otu_table = _otu_table;
     iterations = _iterations;
     exclusion_iterations = _exclusion_iterations;
     exclusion_threshold = _exclusion_threshold;
     threads = _threads;
+    p_rng = get_default_rng_handle(seed);
 
     // OpenMP function from omp.h. This sets the number of threads in a more reliable way but also ignores OMP_NUM_THREADS
     omp_set_num_threads(threads);
