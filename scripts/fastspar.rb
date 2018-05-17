@@ -7,10 +7,10 @@ class Fastspar < Formula
 
   depends_on "autoconf" => :build
   depends_on "automake" => :build
-  depends_on "armadillo" => :run
-  depends_on "gsl" => :run
-  depends_on "gnu-getopt" => :run
-  depends_on "openblas" => :run
+  depends_on "armadillo"
+  depends_on "gsl"
+  depends_on "gnu-getopt"
+  depends_on "openblas"
 
   needs :openmp
 
