@@ -7,7 +7,7 @@ void print_help() {
     fprintf(stderr, "Contact: Stephen Watts (s.watts2@student.unimelb.edu.au)\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "Usage:\n");
-    fprintf(stderr, "  fastspar [options] --otu_table <of> --correlation <rf> --covariance <vf>\n");
+    fprintf(stderr, "  fastspar [options] --otu_table <path> --correlation <path> --covariance <path>\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "  -c <path>, --otu_table <path>\n");
     fprintf(stderr, "                OTU input OTU count table\n");

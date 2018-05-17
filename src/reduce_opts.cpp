@@ -7,15 +7,20 @@ void print_help() {
     fprintf(stderr, "Contact: Stephen Watts (s.watts2@student.unimelb.edu.au)\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "Usage:\n");
-    fprintf(stderr, "  reduce --correlation_table <cf> --pvalue_table <pf> --correlation <rt> --pvalue <pt> --output_prefix <op>\n");
+    fprintf(stderr, "  reduce --correlation_table <path> --pvalue_table <path> --correlation <path> --pvalue <float> --output_prefix <str>\n");
     fprintf(stderr, "\n");
-    fprintf(stderr, "  -r/--correlation_table <cf>       Correlation input table\n");
-    fprintf(stderr, "  -p/--pvalue_table <pf>            Number of bootstrap samples to generate\n");
-    fprintf(stderr, "  -o/--output_prefix <op>           Output prefix\n");
+    fprintf(stderr, "  -r/--correlation_table <path>\n");
+    fprintf(stderr, "               Correlation input table\n");
+    fprintf(stderr, "  -p/--pvalue_table <path>\n");
+    fprintf(stderr, "               Number of bootstrap samples to generate\n");
+    fprintf(stderr, "  -o/--output_prefix <path>\n");
+    fprintf(stderr, "               Output prefix\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "Options:\n");
-    fprintf(stderr, "  -t/--correlation <rt>             Absolute (sign is ignored) correlation threshold (default: 0.1)\n");
-    fprintf(stderr, "  -l/--pvalue <pt>                  P-value threshold (default: 0.05)\n");
+    fprintf(stderr, "  -t/--correlation <float>\n");
+    fprintf(stderr, "               Absolute (sign is ignored) correlation threshold (default: 0.1)\n");
+    fprintf(stderr, "  -l/--pvalue <float>\n");
+    fprintf(stderr, "               P-value threshold (default: 0.05)\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "Other:\n");
     fprintf(stderr, "  -h        --help\n");
@@ -41,7 +46,7 @@ ReduceOptions get_commandline_arguments(int argc, char **argv) {
         {
             {"correlation_table", required_argument, NULL, 'r'},
             {"pvalue_table", required_argument, NULL, 'p'},
-            {"correlation", required_argument, NULL, 'r'},
+            {"correlation", required_argument, NULL, 't'},
             {"pvalue", required_argument, NULL, 'l'},
             {"output_prefix", required_argument, NULL, 'o'},
             {"version", no_argument, NULL, 'v'},
@@ -56,7 +61,7 @@ ReduceOptions get_commandline_arguments(int argc, char **argv) {
         int c;
 
         // Parser
-        c = getopt_long(argc, argv, "hvc:p:r:l:o:", long_options, &option_index);
+        c = getopt_long(argc, argv, "hvr:p:t:l:o:", long_options, &option_index);
 
         // If no more arguments to parse, break
         if (c == -1) {
