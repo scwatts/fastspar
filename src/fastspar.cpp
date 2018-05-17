@@ -5,7 +5,7 @@
 //      FastSpar entry       //
 ///////////////////////////////
 
-#if defined(FASTSPAR_CPACKAGE)
+#if defined(FASTSPAR_CPACKAGE) && !defined(LIBRARY)
 int main(int argc, char **argv) {
     // Starting message
     fprintf(stdout, "Starting FastSpar\n");

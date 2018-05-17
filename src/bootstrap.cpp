@@ -74,7 +74,7 @@ void write_out_bootstrap_table(arma::Mat<double> &bootstrap, std::vector<std::st
 }
 
 
-#if defined(FASTSPAR_CPACKAGE)
+#if defined(FASTSPAR_CPACKAGE) && !defined(LIBRARY)
 int main(int argc, char **argv) {
     // Get commandline arguments
     BootstrapOptions bootstrap_options = get_commandline_arguments(argc, argv);
