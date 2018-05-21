@@ -6,7 +6,7 @@
 
 // Integration test
 // TODO: break into unittests
-TEST_CASE("Integration test") {
+TEST_CASE("Correlation, covariance statisitc integration test") {
     // Input files
     std::string otu_fp("data/fake_data.tsv");
     std::string correlation_fp("data/fake_data_cor.tsv");

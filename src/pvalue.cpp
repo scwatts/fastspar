@@ -170,7 +170,7 @@ arma::Mat<double> calculate_pvalues(OtuTable &otu_table, arma::Mat<double> &obse
         count_values_more_extreme(abs_observed_correlation, abs_bootstrap_correlation, extreme_value_counts);
     }
 
-    arma::Mat<double> pvalues(otu_table.otu_number, otu_table.otu_number, arma::fill::ones);
+    arma::Mat<double> pvalues(otu_table.otu_number, otu_table.otu_number);
     if (exact) {
         // Calculate total possible permutations for each OTU
         printf("Calculating %i total permutations\n", otu_table.otu_number);
@@ -196,6 +196,10 @@ arma::Mat<double> calculate_pvalues(OtuTable &otu_table, arma::Mat<double> &obse
         for (int i = 0; i < otu_table.otu_number; ++i) {
             printf("\tCalculating p-values for row %i of %d\n", i, otu_table.otu_number);
             for (int j = 0; j < otu_table.otu_number; ++j) {
+                // Skip diagonal elements
+                if (i == j) {
+                    continue;
+                }
                 // Get the total possible permutations between the OTU pair
                 // TODO: Check if this is producing desired results
                 double otu_pair_possible_permutations = possible_permutations(i) * possible_permutations(j);
@@ -213,13 +217,14 @@ arma::Mat<double> calculate_pvalues(OtuTable &otu_table, arma::Mat<double> &obse
             }
         }
     } else {
-        arma::Mat<double> pvalues = arma::conv_to<arma::Mat<double>>::from(extreme_value_counts) / permutations;
+        pvalues = arma::conv_to<arma::Mat<double>>::from(extreme_value_counts) / permutations;
     }
+    pvalues.diag().ones();
     return pvalues;
 }
 
 
-#if defined(FASTSPAR_CPACKAGE)
+#if defined(FASTSPAR_CPACKAGE) && !defined(LIBRARY)
 int main(int argc, char **argv) {
     // Get commandline arguments
     PvalOptions pval_options = get_commandline_arguments(argc, argv);

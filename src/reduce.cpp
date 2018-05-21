@@ -84,6 +84,7 @@ void write_sparse_matrix(struct SparseMatrix &matrix, std::string out_filename) 
 }
 
 
+#if defined(FASTSPAR_CPACKAGE) && !defined(LIBRARY)
 int main(int argc, char **argv) {
     // Get commandline arguments
     ReduceOptions reduce_options = get_commandline_arguments(argc, argv);
@@ -121,3 +122,4 @@ int main(int argc, char **argv) {
     write_sparse_matrix(filtered_correlation_table, reduce_options.output_prefix + "_filtered_correlation.tsv");
     write_sparse_matrix(filtered_pvalue_table, reduce_options.output_prefix + "_filtered_pvalue.tsv");
 }
+#endif
