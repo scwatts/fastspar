@@ -20,7 +20,7 @@
 std::vector<std::string> get_bootstrap_correlation_paths(std::string glob_path);
 
 // Calculate p-values for all OTU pairs
-arma::Mat<double> calculate_pvalues(OtuTable &otu_table, arma::Mat<double> &observed_correlation, std::vector<std::string> &bootstrap_correlation_fps, unsigned int permutations, unsigned int threads);
+arma::Mat<double> calculate_pvalues(OtuTable &otu_table, arma::Mat<double> &observed_correlation, std::vector<std::string> &bootstrap_correlation_fps, unsigned int permutations, bool exact, unsigned int threads);
 
 // Count bootstrap correlations more extreme than the observed correlation
 void count_values_more_extreme(arma::Mat<double> &abs_observed_correlation, arma::Mat<double> &abs_bootstrap_correlation, arma::Mat<int> &extreme_value_counts);

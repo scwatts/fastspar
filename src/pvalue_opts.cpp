@@ -21,6 +21,8 @@ void print_help() {
     fprintf(stderr, "               Output p-value matrix filename\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "Options:\n");
+    fprintf(stderr, "  -s/--pseudo\n");
+    fprintf(stderr, "                Calculate pseudo p-values rather than exact p-values (default: false)\n");
     fprintf(stderr, "  -t/--threads <int>\n");
     fprintf(stderr, "                Number of threads (default: 1)\n");
     fprintf(stderr, "\n");
@@ -52,6 +54,7 @@ PvalOptions get_commandline_arguments(int argc, char **argv) {
             {"permutations", required_argument, NULL, 'n'},
             {"outfile", required_argument, NULL, 'o'},
             {"threads", required_argument, NULL, 't'},
+            {"pseudo", required_argument, NULL, 's'},
             {"version", no_argument, NULL, 'v'},
             {"help", no_argument, NULL, 'h'},
             {NULL, 0, 0, 0}
@@ -64,7 +67,7 @@ PvalOptions get_commandline_arguments(int argc, char **argv) {
         int c;
 
         // Parser
-        c = getopt_long(argc, argv, "hvc:p:r:n:o:t:", long_options, &option_index);
+        c = getopt_long(argc, argv, "hvc:p:r:n:o:t:s", long_options, &option_index);
 
         // If no more arguments to parse, break
         if (c == -1) {
@@ -85,11 +88,14 @@ PvalOptions get_commandline_arguments(int argc, char **argv) {
             case 'n':
                 pval_options.permutations = int_from_optarg(optarg);
                 break;
-            case 't':
-                pval_options.threads = int_from_optarg(optarg);
-                break;
             case 'o':
                 pval_options.out_filename = optarg;
+                break;
+            case 's':
+                pval_options.exact = false;
+                break;
+            case 't':
+                pval_options.threads = int_from_optarg(optarg);
                 break;
             case 'v':
                 print_version();

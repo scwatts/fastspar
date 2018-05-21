@@ -28,17 +28,11 @@ std::vector<std::string> get_bootstrap_correlation_paths(std::string glob_path) 
 void count_values_more_extreme(arma::Mat<double> &abs_observed_correlation,
                                arma::Mat<double> &abs_bootstrap_correlation,
                                arma::Mat<int> &extreme_value_counts) {
-    // TODO: Check if this is faster than actually just processing the elements
     // Set diagonal to zero to avoid processing self pairs of OTUs
     abs_bootstrap_correlation.diag().zeros();
-    // Find values more extreme than observed in bootstrap for each i,j element
-    arma::Col<arma::uword> extreme_value_index = arma::find(abs_bootstrap_correlation >= abs_observed_correlation);
     // For each more extreme value, increment count in extreme_value_counts
-    for (arma::Col<arma::uword>::iterator it = extreme_value_index.begin(); it != extreme_value_index.end(); ++it) {
-#pragma omp atomic
-        ++extreme_value_counts(*it);
-    }
-
+#pragma omp critical
+    extreme_value_counts(arma::find(abs_bootstrap_correlation >= abs_observed_correlation)) += 1;
 }
 
 
@@ -154,7 +148,7 @@ double calculate_pvalue_with_integral_estimate(double otu_pair_possible_permutat
 }
 
 
-arma::Mat<double> calculate_pvalues(OtuTable &otu_table, arma::Mat<double> &observed_correlation, std::vector<std::string> &bootstrap_correlation_fps, unsigned int permutations, unsigned int threads) {
+arma::Mat<double> calculate_pvalues(OtuTable &otu_table, arma::Mat<double> &observed_correlation, std::vector<std::string> &bootstrap_correlation_fps, unsigned int permutations, bool exact, unsigned int threads) {
     // Get absolute correlations
     arma::Mat<double> abs_observed_correlation = arma::abs(observed_correlation);
 
@@ -176,48 +170,51 @@ arma::Mat<double> calculate_pvalues(OtuTable &otu_table, arma::Mat<double> &obse
         count_values_more_extreme(abs_observed_correlation, abs_bootstrap_correlation, extreme_value_counts);
     }
 
-    // Calculate total possible permutations for each OTU
-    printf("Calculating %i total permutations\n", otu_table.otu_number);
-    arma::Col<double> possible_permutations(otu_table.otu_number, arma::fill::zeros);
-    for (int i = 0; i < otu_table.otu_number; ++i) {
-        printf("\tTotal permutation %i of %d\n", i, otu_table.otu_number);
-        // First we need to get the frequency of each count for an OTU across all samples
-        // TODO: Check that after changing from int counts to double (for corrected OTU counts) that this isn't borked
-        // Main concern that equality will not be true in some cases where they would be otherwise due to float error
-        std::unordered_map<double, int> count_frequency;
-        for (arma::Mat<double>::col_iterator it = otu_table.counts.begin_col(i); it != otu_table.counts.end_col(i); ++it) {
-            ++count_frequency[*it];
+    arma::Mat<double> pvalues(otu_table.otu_number, otu_table.otu_number, arma::fill::ones);
+    if (exact) {
+        // Calculate total possible permutations for each OTU
+        printf("Calculating %i total permutations\n", otu_table.otu_number);
+        arma::Col<double> possible_permutations(otu_table.otu_number, arma::fill::zeros);
+        for (int i = 0; i < otu_table.otu_number; ++i) {
+            printf("\tTotal permutation %i of %d\n", i, otu_table.otu_number);
+            // First we need to get the frequency of each count for an OTU across all samples
+            // TODO: Check that after changing from int counts to double (for corrected OTU counts) that this isn't borked
+            // Main concern that equality will not be true in some cases where they would be otherwise due to float error
+            std::unordered_map<double, int> count_frequency;
+            for (arma::Mat<double>::col_iterator it = otu_table.counts.begin_col(i); it != otu_table.counts.end_col(i); ++it) {
+                ++count_frequency[*it];
+            }
+
+            // Call function to calculate possible permutations and store
+            possible_permutations(i) = calculate_possbile_otu_permutations(count_frequency, otu_table.sample_number);
         }
 
-        // Call function to calculate possible permutations and store
-        possible_permutations(i) = calculate_possbile_otu_permutations(count_frequency, otu_table.sample_number);
-    }
-
-    // Calculate p-values; loop through each i, j element in the extreme counts matrix
-    printf("Calculating the %i p-values\n", otu_table.otu_number*otu_table.otu_number);
-    arma::Mat<double> pvalues(otu_table.otu_number, otu_table.otu_number, arma::fill::zeros);
+        // Calculate p-values; loop through each i, j element in the extreme counts matrix
+        printf("Calculating the %i p-values\n", otu_table.otu_number*otu_table.otu_number);
 
 #pragma omp parallel for schedule(static, 1)
-    for (int i = 0; i < otu_table.otu_number; ++i) {
-        printf("\tCalculating p-values for row %i of %d\n", i, otu_table.otu_number);
-        for (int j = 0; j < otu_table.otu_number; ++j) {
-            // Get the total possible permutations between the OTU pair
-            // TODO: Check if this is producing desired results
-            double otu_pair_possible_permutations = possible_permutations(i) * possible_permutations(j);
-            // The 'if' code in block below was ported from statmod::permp and statmod::gaussquad
-            if (otu_pair_possible_permutations <= 10000 ) {
-                // Exact p-value calculation
-                // If fewer than 10000 possible permutations, we can safely cast double to int
+        for (int i = 0; i < otu_table.otu_number; ++i) {
+            printf("\tCalculating p-values for row %i of %d\n", i, otu_table.otu_number);
+            for (int j = 0; j < otu_table.otu_number; ++j) {
+                // Get the total possible permutations between the OTU pair
+                // TODO: Check if this is producing desired results
+                double otu_pair_possible_permutations = possible_permutations(i) * possible_permutations(j);
+                // The 'if' code in block below was ported from statmod::permp and statmod::gaussquad
+                if (otu_pair_possible_permutations <= 10000 ) {
+                    // Exact p-value calculation
+                    // If fewer than 10000 possible permutations, we can safely cast double to int
 #pragma omp atomic write
-                pvalues(i, j) = calculate_exact_pvalue((int)otu_pair_possible_permutations, extreme_value_counts(i, j), permutations);
-            } else {
-                // Integral approximation for p-value calculation
+                    pvalues(i, j) = calculate_exact_pvalue((int)otu_pair_possible_permutations, extreme_value_counts(i, j), permutations);
+                } else {
+                    // Integral approximation for p-value calculation
 #pragma omp atomic write
-                pvalues(i, j) = calculate_pvalue_with_integral_estimate(otu_pair_possible_permutations, extreme_value_counts(i, j), permutations);
+                    pvalues(i, j) = calculate_pvalue_with_integral_estimate(otu_pair_possible_permutations, extreme_value_counts(i, j), permutations);
+                }
             }
         }
+    } else {
+        arma::Mat<double> pvalues = arma::conv_to<arma::Mat<double>>::from(extreme_value_counts) / permutations;
     }
-
     return pvalues;
 }
 
@@ -246,7 +243,8 @@ int main(int argc, char **argv) {
 
     // Calulate p-values
     arma::Mat<double> pvalues = calculate_pvalues(otu_table, observed_correlation, bs_cor_paths,
-                                                    pval_options.permutations, pval_options.threads);
+                                                    pval_options.permutations, pval_options.exact,
+                                                    pval_options.threads);
     // Write out p-values
     printf("Writing out p-values\n");
     write_out_square_otu_matrix(pvalues, otu_table, pval_options.out_filename);

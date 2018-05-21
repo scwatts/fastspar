@@ -13,6 +13,7 @@ struct PvalOptions {
     std::string correlation_filename;
     std::string bootstrap_prefix;
     std::string out_filename;
+    bool exact = true;
 
     unsigned int permutations = 0;
     unsigned int threads = 1;
