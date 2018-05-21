@@ -1,5 +1,5 @@
 # Initialisation
-AC_INIT([fastspar], [0.0.6])
+AC_INIT([fastspar], [0.0.6], [s.watts2@student.unimelb.edu.au])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([foreign -Wall -Werror])
 
@@ -17,8 +17,8 @@ AC_ARG_ENABLE([arma-wrapper], AS_HELP_STRING([--disable-arma-wrapper], [Disables
 
 # Check that the Armadillo runtime library is installed if we need it
 AS_IF([test "x$static_compile" = "xfalse" && test "x$arma_wrapper" = "xtrue"],
-      [AC_CHECK_LIB([armadillo], [main], [LIBS="$LIBS -larmadillo"],
-                    AC_MSG_ERROR([could not find the library Armadillo]))])
+      [AC_CHECK_LIB([armadillo], [main],
+                    [], AC_MSG_ERROR([could not find the library Armadillo]))])
 
 # Set conditionals to use in the Makefile.am
 AM_CONDITIONAL([ARMA_DONT_USE_WRAPPER],
@@ -34,32 +34,27 @@ AM_PROG_AR
 
 # Check dependencies
 AC_CHECK_LIB([gomp], [main],
-             [LIBS="$LIBS -lgomp"],
-             [AC_MSG_ERROR([could not find the library OpenMP])])
+             [], [AC_MSG_ERROR([could not find the library OpenMP])])
 
 AC_CHECK_LIB([m], [cos],
-             [LIBS="$LIBS -lm"],
-             [AC_MSG_ERROR([could not find the library LibM])])
+             [], [AC_MSG_ERROR([could not find the library LibM])])
 
 AC_CHECK_LIB([gslcblas], [cblas_dgemm],
-             [LIBS="-lgslcblas $LIBS"],
-             [AC_MSG_ERROR([could not find the library GSL \(gslcblas\)])])
+             [], [AC_MSG_ERROR([could not find the library GSL \(gslcblas\)])])
 
 AC_CHECK_LIB([gsl], [gsl_ran_dirichlet],
-             [LIBS="-lgsl $LIBS"],
-             [AC_MSG_ERROR([could not find the library GSL])])
+             [], [AC_MSG_ERROR([could not find the library GSL])])
 
 AC_CHECK_LIB([quadmath], [quadmath_snprintf],
-             [LIBS="-lquadmath $LIBS"],
-             [AC_MSG_ERROR([could not find the library quadmath])])
+             [], [AC_MSG_ERROR([could not find the library quadmath])])
 
 AC_CHECK_LIB([gfortran], [main],
-             [LIBS="-lgfortran $LIBS"],
-             [AC_MSG_ERROR([could not find the library gfortran])])
+             [], [AC_MSG_ERROR([could not find the library gfortran])])
 
-AX_BLAS([LIBS="$BLAS_LIBS $LIBS"],
-        [AC_MSG_ERROR([could not find the library gfortran])])
+AX_BLAS([], [AC_MSG_ERROR([could not find the library gfortran])])
 
+# Set libraries as specified by AX_BLAS documentation
+LIBS="$BLAS_LIBS $LIBS $FLIBS"
 
 # Set config headers and makefiles
 AC_CONFIG_HEADERS([config.h])
