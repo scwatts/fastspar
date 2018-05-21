@@ -10,7 +10,7 @@ Rapid and scalable correlation estimation for compositional data
 * [Introduction](#introduction)
 * [Citation](#citation)
 * [Requirements](#requirements)
-* [Installation](#installation)
+* [Installing](#installing)
 * [Usage](#usage)
 * [License](#license)
 
