@@ -40,3 +40,21 @@ TEST_CASE("p-value integration test") {
     REQUIRE(arma::approx_equal(test_pseudo_pvalues, pseudo_pvalues, "absdiff", 0.001));
     REQUIRE(arma::approx_equal(test_exact_pvalues, exact_pvalues, "absdiff", 0.001));
 }
+
+
+TEST_CASE("factorial division") {
+    // Permutations with repetition. Set of n:
+    //      element a repeat na times, element b repeated nb times, ...
+    //      n = rep(a, na), rep(b, nb), ...
+    // permutations:
+    //      factorial(n)
+    //  -------------------
+    //  factorial(na) * factorial(nb) * ...
+    //
+    //  required is cancelation of factorials during division to avoid overflow
+    // Data
+    int sample_number = 32;
+    std::unordered_map<double, int> count_frequency = {{10, 1}, {0, 20}, {2, 5}, {3, 6}};
+    double result = calculate_possbile_otu_permutations(count_frequency, sample_number);
+    REQUIRE(1251795504960 == result);
+}
