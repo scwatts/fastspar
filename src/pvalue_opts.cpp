@@ -1,13 +1,13 @@
-#include "exact_pvalue_opts.h"
+#include "pvalue_opts.h"
 
 
 void print_help() {
-    fprintf(stderr, "Program: FastSpar exact p-values (c++ implementation of SparCC)\n");
+    fprintf(stderr, "Program: FastSpar p-values (c++ implementation of SparCC)\n");
     fprintf(stderr, "Version %s\n", VERSION.c_str());
     fprintf(stderr, "Contact: Stephen Watts (s.watts2@student.unimelb.edu.au)\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "Usage:\n");
-    fprintf(stderr, "  exact_pavlues [options] --otu_table <path> --correlation <path> --prefix <str> --permutations <int> --output <path>\n");
+    fprintf(stderr, "  fastspar_pvalues [options] --otu_table <path> --correlation <path> --prefix <str> --permutations <int> --output <path>\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "  -c/--otu_table <path>\n");
     fprintf(stderr, "               OTU input table used to generated correlations\n");
@@ -33,15 +33,15 @@ void print_help() {
 
 
 void print_version() {
-    fprintf(stderr, "Program: FastSpar exact p-values (c++ implementation of SparCC)\n");
+    fprintf(stderr, "Program: FastSpar p-values (c++ implementation of SparCC)\n");
     fprintf(stderr, "Version %s\n", VERSION.c_str());
     fprintf(stderr, "Contact: Stephen Watts (s.watts2@student.unimelb.edu.au)\n");
 }
 
 
-ExactpvalOptions get_commandline_arguments(int argc, char **argv) {
-    // Get instance of ExactpvalOptions
-    ExactpvalOptions exactpval_options;
+PvalOptions get_commandline_arguments(int argc, char **argv) {
+    // Get instance of PvalOptions
+    PvalOptions pval_options;
 
     // Commandline arguments (for getlongtops)
     struct option long_options[] =
@@ -74,22 +74,22 @@ ExactpvalOptions get_commandline_arguments(int argc, char **argv) {
         // Process current arguments
         switch(c) {
             case 'c':
-                exactpval_options.otu_filename = optarg;
+                pval_options.otu_filename = optarg;
                 break;
             case 'r':
-                exactpval_options.correlation_filename = optarg;
+                pval_options.correlation_filename = optarg;
                 break;
             case 'p':
-                exactpval_options.bootstrap_prefix = optarg;
+                pval_options.bootstrap_prefix = optarg;
                 break;
             case 'n':
-                exactpval_options.permutations = int_from_optarg(optarg);
+                pval_options.permutations = int_from_optarg(optarg);
                 break;
             case 't':
-                exactpval_options.threads = int_from_optarg(optarg);
+                pval_options.threads = int_from_optarg(optarg);
                 break;
             case 'o':
-                exactpval_options.out_filename = optarg;
+                pval_options.out_filename = optarg;
                 break;
             case 'v':
                 print_version();
@@ -118,7 +118,7 @@ ExactpvalOptions get_commandline_arguments(int argc, char **argv) {
 
 
     // Check if have a reasonable number of threads
-    if (exactpval_options.threads < 1) {
+    if (pval_options.threads < 1) {
         print_help();
         fprintf(stderr,"\n%s: error: must specify at least 1 thread\n", argv[0]);
         exit(1);
@@ -126,11 +126,11 @@ ExactpvalOptions get_commandline_arguments(int argc, char **argv) {
 
     // Check we don't attempt to use more threads than we have
     unsigned int available_threads = std::thread::hardware_concurrency();
-    if (available_threads > 1 && exactpval_options.threads > available_threads) {
+    if (available_threads > 1 && pval_options.threads > available_threads) {
         print_help();
         fprintf(stderr, "\n%s: error: only %d threads are available\n", argv[0], available_threads);
         exit(1);
-    } else if (exactpval_options.threads > 64) {
+    } else if (pval_options.threads > 64) {
         print_help();
         fprintf(stderr, "\n%s: error: current hardcode limit of 64 threads\n", argv[0]);
         exit(1);
@@ -138,27 +138,27 @@ ExactpvalOptions get_commandline_arguments(int argc, char **argv) {
 
 
     // Make sure we have filenames and parameters
-    if (exactpval_options.otu_filename.empty()) {
+    if (pval_options.otu_filename.empty()) {
         print_help();
         fprintf(stderr,"\n%s: error: argument -c/--otu_table is required\n", argv[0]);
         exit(1);
     }
-    if (exactpval_options.bootstrap_prefix.empty()) {
+    if (pval_options.bootstrap_prefix.empty()) {
         print_help();
         fprintf(stderr,"\n%s: error: argument -p/--prefix is required\n", argv[0]);
         exit(1);
     }
-    if (exactpval_options.correlation_filename.empty()) {
+    if (pval_options.correlation_filename.empty()) {
         print_help();
         fprintf(stderr,"\n%s: error: argument -r/--correlation is required\n", argv[0]);
         exit(1);
     }
-    if (exactpval_options.permutations == 0) {
+    if (pval_options.permutations == 0) {
         print_help();
         fprintf(stderr,"\n%s: error: argument -n/--permutations is required\n", argv[0]);
         exit(1);
     }
-    if (exactpval_options.out_filename.empty()) {
+    if (pval_options.out_filename.empty()) {
         print_help();
         fprintf(stderr,"\n%s: error: argument -o/--output is required\n", argv[0]);
         exit(1);
@@ -167,30 +167,30 @@ ExactpvalOptions get_commandline_arguments(int argc, char **argv) {
 
     // Check that the OTU file exists
     std::ifstream checkfile;
-    checkfile.open(exactpval_options.otu_filename);
+    checkfile.open(pval_options.otu_filename);
     if (!checkfile.good()) {
         print_help();
-        fprintf(stderr, "\n%s: error: OTU table %s does not exist\n", argv[0], exactpval_options.otu_filename.c_str());
+        fprintf(stderr, "\n%s: error: OTU table %s does not exist\n", argv[0], pval_options.otu_filename.c_str());
         exit(1);
     }
     checkfile.close();
 
     // Check that the correlation file exists
-    checkfile.open(exactpval_options.correlation_filename);
+    checkfile.open(pval_options.correlation_filename);
     if (!checkfile.good()) {
         print_help();
-        fprintf(stderr, "\n%s: error: correlation table %s does not exist\n", argv[0], exactpval_options.correlation_filename.c_str());
+        fprintf(stderr, "\n%s: error: correlation table %s does not exist\n", argv[0], pval_options.correlation_filename.c_str());
         exit(1);
     }
     checkfile.close();
 
 
     // Make sure our prefix has a trailing '*' for globbing
-    if (exactpval_options.bootstrap_prefix.back() != '*') {
-        exactpval_options.bootstrap_prefix += "*";
+    if (pval_options.bootstrap_prefix.back() != '*') {
+        pval_options.bootstrap_prefix += "*";
     }
 
 
-    return exactpval_options;
+    return pval_options;
 }
 

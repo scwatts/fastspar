@@ -15,24 +15,24 @@ endif
 # Sources
 fastspar_fps = fastspar.cpp fastspar_opts.cpp common.cpp
 fastspar_bootstrap_fps = bootstrap.cpp bootstrap_opts.cpp common.cpp
-fastspar_exactpvalues_fps = exact_pvalue.cpp exact_pvalue_opts.cpp gaussq.f common.cpp
+fastspar_pvalues_fps = pvalue.cpp pvalue_opts.cpp gaussq.f common.cpp
 fastspar_reduce_fps = reduce.cpp reduce_opts.cpp common.cpp
 
 # Libraries for testing
-check_LIBRARIES = libfastspar.a libfastspar_bootstrap.a libfastspar_exactpvalues.a libfastspar_reduce.a
+check_LIBRARIES = libfastspar.a libfastspar_bootstrap.a libfastspar_pvalues.a libfastspar_reduce.a
 libfastspar_a_SOURCES = $(fastspar_fps)
 libfastspar_bootstrap_a_SOURCES = $(fastspar_bootstrap_fps)
-libfastspar_exactpvalues_a_SOURCES = $(fastspar_exactpvalues_fps)
+libfastspar_pvalues_a_SOURCES = $(fastspar_pvalues_fps)
 libfastspar_reduce_a_SOURCES = $(fastspar_reduce_fps)
 
 libfastspar_a_CXXFLAGS = -DLIBRARY $(AM_CXXFLAGS)
 libfastspar_bootstrap_a_CXXFLAGS = -DLIBRARY $(AM_CXXFLAGS)
-libfastspar_exactpvalues_a_CXXFLAGS = -DLIBRARY $(AM_CXXFLAGS)
+libfastspar_pvalues_a_CXXFLAGS = -DLIBRARY $(AM_CXXFLAGS)
 libfastspar_reduce_a_CXXFLAGS = -DLIBRARY $(AM_CXXFLAGS)
 
 # ELFs
-bin_PROGRAMS = fastspar fastspar_bootstrap fastspar_exactpvalues fastspar_reduce
+bin_PROGRAMS = fastspar fastspar_bootstrap fastspar_pvalues fastspar_reduce
 fastspar_SOURCES = $(fastspar_fps)
 fastspar_bootstrap_SOURCES = $(fastspar_bootstrap_fps)
-fastspar_exactpvalues_SOURCES = $(fastspar_exactpvalues_fps)
+fastspar_pvalues_SOURCES = $(fastspar_pvalues_fps)
 fastspar_reduce_SOURCES = $(fastspar_reduce_fps)

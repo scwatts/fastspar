@@ -1,4 +1,4 @@
-#include "exact_pvalue.h"
+#include "pvalue.h"
 
 
 extern "C" {
@@ -225,31 +225,31 @@ arma::Mat<double> calculate_pvalues(OtuTable &otu_table, arma::Mat<double> &obse
 #if defined(FASTSPAR_CPACKAGE)
 int main(int argc, char **argv) {
     // Get commandline arguments
-    ExactpvalOptions exactpval_options = get_commandline_arguments(argc, argv);
+    PvalOptions pval_options = get_commandline_arguments(argc, argv);
 
     // Collect bootstrap correlation file paths and then make sure we have found the correct number
-    std::vector<std::string> bs_cor_paths = get_bootstrap_correlation_paths(exactpval_options.bootstrap_prefix);
-    if (bs_cor_paths.size() != exactpval_options.permutations) {
+    std::vector<std::string> bs_cor_paths = get_bootstrap_correlation_paths(pval_options.bootstrap_prefix);
+    if (bs_cor_paths.size() != pval_options.permutations) {
 	    printf("ERROR: number of permutations, %i, isn't equal to the number of bootstrap correlations found, %zu\n",
-			    exactpval_options.permutations, bs_cor_paths.size());
+			    pval_options.permutations, bs_cor_paths.size());
 	    exit(0);
     }
 
     // Read in otu tables (used to calculate total possible permutations)
     printf("Reading in OTU count table\n");
     OtuTable otu_table;
-    otu_table.load_otu_file(exactpval_options.otu_filename);
+    otu_table.load_otu_file(pval_options.otu_filename);
 
     // Read in observed correlation
     printf("Reading in observed correlations\n");
-    arma::Mat<double> observed_correlation = load_correlation_file(exactpval_options.correlation_filename);
+    arma::Mat<double> observed_correlation = load_correlation_file(pval_options.correlation_filename);
 
     // Calulate p-values
     arma::Mat<double> pvalues = calculate_pvalues(otu_table, observed_correlation, bs_cor_paths,
-                                                    exactpval_options.permutations, exactpval_options.threads);
+                                                    pval_options.permutations, pval_options.threads);
     // Write out p-values
     printf("Writing out p-values\n");
-    write_out_square_otu_matrix(pvalues, otu_table, exactpval_options.out_filename);
+    write_out_square_otu_matrix(pvalues, otu_table, pval_options.out_filename);
 
     return 0;
 }

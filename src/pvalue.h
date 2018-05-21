@@ -1,5 +1,5 @@
-#ifndef __EXACT_PVALUE_H__
-#define __EXACT_PVALUE_H__
+#ifndef __PVALUE_H__
+#define __PVALUE_H__
 
 
 #include <cmath>
@@ -12,7 +12,7 @@
 
 #include "common.h"
 #if defined(FASTSPAR_CPACKAGE)
-    #include "exact_pvalue_opts.h"
+    #include "pvalue_opts.h"
 #endif
 
 

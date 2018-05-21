@@ -112,7 +112,7 @@ parallel fastspar --otu_table {} --correlation bootstrap_correlation/cor_{/} --c
 
 From these correlations, the *p*-values are then calculated:
 ```bash
-fastspar_exactpvalues --otu_table fake_data.tsv --correlation median_correlation.tsv --prefix bootstrap_correlation/cor_fake_data_ --permutations 1000 --outfile pvalues.tsv
+fastspar_pvalues --otu_table fake_data.tsv --correlation median_correlation.tsv --prefix bootstrap_correlation/cor_fake_data_ --permutations 1000 --outfile pvalues.tsv
 ```
 
 
