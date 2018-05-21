@@ -1,7 +1,15 @@
+// Framework to provide main implementation
+#define CATCH_CONFIG_MAIN
+
+
 #include "catch.hpp"
 
 
 #include "../src/pvalue.h"
+
+
+// Framework to provide main implementation
+#define CATCH_CONFIG_MAIN
 
 
 // Integration test
