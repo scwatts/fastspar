@@ -79,17 +79,17 @@ Once completed, the `FastSpar` executables can be run from the command line.
 ### Correlation inference
 To run `FastSpar`, you must have absolute OTU counts in BIOM tsv format file (with no metadata). The `fake_data.tsv` (from the original SparCC implementation) will be used as an example:
 ```bash
-fastspar --otu_table fake_data.tsv --correlation median_correlation.tsv --covariance median_covariance.tsv
+fastspar --otu_table tests/data/fake_data.tsv --correlation median_correlation.tsv --covariance median_covariance.tsv
 ```
 
 The number of iterations (rounds of SparCC correlation estimation) and exclusion iterations (the number of times highly correlation OTU pairs are discovered and excluded) can also be tweaked:
 ```bash
-fastspar --iterations 50 --exclude_iterations 20 --otu_table fake_data.tsv --correlation median_correlation.tsv --covariance median_covariance.tsv
+fastspar --iterations 50 --exclude_iterations 20 --otu_table tests/data/fake_data.tsv --correlation median_correlation.tsv --covariance median_covariance.tsv
 ```
 
 Further, the minimum threshold to exclude correlated OTU pairs can be increased:
 ```bash
-fastspar --threshold 0.2 --otu_table fake_data.tsv --correlation median_correlation.tsv --covariance median_covariance.tsv
+fastspar --threshold 0.2 --otu_table tests/data/fake_data.tsv --correlation median_correlation.tsv --covariance median_covariance.tsv
 ```
 
 
@@ -100,7 +100,7 @@ First we generate the 1000 boostrap counts:
 
 ```bash
 mkdir bootstrap_counts
-fastspar_bootstrap --otu_table fake_data.tsv --number 1000 --prefix bootstrap_counts/fake_data
+fastspar_bootstrap --otu_table tests/data/fake_data.tsv --number 1000 --prefix bootstrap_counts/fake_data
 ```
 
 And then infer correlations for each bootstrap count (running in parallel with all processes available):
@@ -112,14 +112,14 @@ parallel fastspar --otu_table {} --correlation bootstrap_correlation/cor_{/} --c
 
 From these correlations, the *p*-values are then calculated:
 ```bash
-fastspar_pvalues --otu_table fake_data.tsv --correlation median_correlation.tsv --prefix bootstrap_correlation/cor_fake_data_ --permutations 1000 --outfile pvalues.tsv
+fastspar_pvalues --otu_table tests/data/fake_data.tsv --correlation median_correlation.tsv --prefix bootstrap_correlation/cor_fake_data_ --permutations 1000 --outfile pvalues.tsv
 ```
 
 
 ### Threading
 If `FastSpar` is compiled with OpenMP, threading can be used by invoking `--threads <thread_number>` at the command line for several tools:
 ```bash
-fastspar --otu_table fake_data.txt --correlation median_correlation.tsv --covariance median_covariance.tsv --iterations 50 --threads 10
+fastspar --otu_table tests/data/fake_data.txt --correlation median_correlation.tsv --covariance median_covariance.tsv --iterations 50 --threads 10
 ```
 
 ## License
