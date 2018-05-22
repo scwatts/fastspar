@@ -54,7 +54,7 @@ PvalOptions get_commandline_arguments(int argc, char **argv) {
             {"permutations", required_argument, NULL, 'n'},
             {"outfile", required_argument, NULL, 'o'},
             {"threads", required_argument, NULL, 't'},
-            {"pseudo", required_argument, NULL, 's'},
+            {"pseudo", no_argument, NULL, 's'},
             {"version", no_argument, NULL, 'v'},
             {"help", no_argument, NULL, 'h'},
             {NULL, 0, 0, 0}
