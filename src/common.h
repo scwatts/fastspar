@@ -28,7 +28,7 @@
 struct OtuTable {
     std::vector<std::string> sample_names;
     std::vector<std::string> otu_ids;
-    arma::Mat<double> counts;
+    arma::Mat<float> counts;
     int otu_number = 0;
     int sample_number = 0;
 
@@ -38,10 +38,10 @@ struct OtuTable {
 
 
 // Load a correlation (or covariance table) from file
-arma::Mat<double> load_correlation_file(std::string &filename);
+arma::Mat<float> load_correlation_file(std::string &filename);
 
 // Save an square OTU matrix (e.g. correlation matrix) to file
-void write_out_square_otu_matrix(arma::Mat<double> &matrix, OtuTable &otu_table, std::string filename);
+void write_out_square_otu_matrix(arma::Mat<float> &matrix, OtuTable &otu_table, std::string filename);
 
 // Set up rng environment and return default rng
 gsl_rng *get_default_rng_handle(unsigned int seed);

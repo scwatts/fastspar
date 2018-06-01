@@ -21,7 +21,7 @@ int main(int argc, char **argv) {
     // Check that OTUs have variance in their counts
     std::vector<int> invariant_otus;
     for (int i = 0; i < otu_table.otu_number; ++i) {
-        arma::Col<double> unique_counts = arma::unique(otu_table.counts.col(i));
+        arma::Col<float> unique_counts = arma::unique(otu_table.counts.col(i));
         if (unique_counts.n_elem == 1) {
             invariant_otus.push_back(i);
         }
@@ -121,8 +121,8 @@ FastSparIteration::FastSparIteration(const OtuTable *_otu_table, unsigned int _e
     components_remaining = otu_table->otu_number;
 
     // We also have to setup the mod matrix
-    std::vector<double> mod_diag(otu_table->otu_number, otu_table->otu_number - 2);
-    arma::Mat<double> _mod = arma::diagmat((arma::Col<double>) mod_diag);
+    std::vector<float> mod_diag(otu_table->otu_number, otu_table->otu_number - 2);
+    arma::Mat<float> _mod = arma::diagmat((arma::Col<float>) mod_diag);
     mod = _mod + 1;
 }
 
@@ -216,7 +216,7 @@ void FastSparIteration::estimate_component_fractions(gsl_rng *p_rng) {
     // Estimate fractions
     for(int i = 0; i < otu_table->sample_number; ++i) {
         // Get arma row and add pseudo count (then convert to double vector for rng function)
-        arma::Row<double> row_pseudocount = otu_table->counts.row(i) + 1;
+        arma::Row<double> row_pseudocount = arma::conv_to<arma::Row<double>>::from(otu_table->counts.row(i) + 1);
 
         // Draw from dirichlet dist, storing results in theta double array
         double *theta = new double[row_size];
@@ -226,7 +226,7 @@ void FastSparIteration::estimate_component_fractions(gsl_rng *p_rng) {
 
         // Create arma::Row from double[] and update fractions row
         arma::Mat<double> estimated_fractions_row(theta, 1, otu_table->otu_number);
-        fraction_estimates.row(i) = estimated_fractions_row;
+        fraction_estimates.row(i) = arma::conv_to<arma::Row<float>>::from(estimated_fractions_row);
 
         // Free dynamic memory
         delete[] theta;
@@ -238,14 +238,14 @@ void FastSparIteration::estimate_component_fractions(gsl_rng *p_rng) {
 void FastSparIteration::calculate_fraction_log_ratio_variance() {
     // TODO: Test the amount of memory pre-computing the log matrix is consuming
     // Log fraction matrix and initialise a zero-filled matrix (diagonals must be initialised)
-    arma::Mat<double> log_fraction_estimates = arma::log(fraction_estimates);
-    arma::Mat<double> temp_fraction_variance(fraction_estimates.n_cols, fraction_estimates.n_cols, arma::fill::zeros);
+    arma::Mat<float> log_fraction_estimates = arma::log(fraction_estimates);
+    arma::Mat<float> temp_fraction_variance(fraction_estimates.n_cols, fraction_estimates.n_cols, arma::fill::zeros);
 
     // Calculate log-ratio variance for fraction estimates
     for (unsigned int i = 0; i < fraction_estimates.n_cols - 1; ++i) {
          for (unsigned int j = i + 1; j < fraction_estimates.n_cols; ++j) {
              // Calculate variance of log fractions
-             double col_variance = arma::var(log_fraction_estimates.col(i) - log_fraction_estimates.col(j));
+             float col_variance = arma::var(log_fraction_estimates.col(i) - log_fraction_estimates.col(j));
 
              // Add to matrix
              temp_fraction_variance(i, j) = col_variance;
@@ -260,7 +260,7 @@ void FastSparIteration::calculate_fraction_log_ratio_variance() {
 // Calculate the basis variance
 void FastSparIteration::calculate_basis_variance() {
     // NOTE: We make a copy of the variance matrix here to restrict modifications outside this function
-    arma::Mat<double> fraction_variance_munge = fraction_variance;
+    arma::Mat<float> fraction_variance_munge = fraction_variance;
 
     // If any pairs have been excluded, set variance to zero
     if (!excluded_pairs.empty()) {
@@ -268,7 +268,7 @@ void FastSparIteration::calculate_basis_variance() {
     }
 
     // Calculate the component variance
-    arma::Col<double> component_variance= arma::sum(fraction_variance_munge, 1);
+    arma::Col<float> component_variance= arma::sum(fraction_variance_munge, 1);
 
     // Solve Ax = b where A is the mod matrix and b is the component variance
     basis_variance = arma::solve(mod, component_variance, arma::solve_opts::fast);
@@ -281,16 +281,16 @@ void FastSparIteration::calculate_basis_variance() {
 // Calculate the correlation and covariance
 void FastSparIteration::calculate_correlation_and_covariance(){
     // Initialise matrices and vectors
-    std::vector<double> basis_cor_diag(otu_table->otu_number, 1);
-    arma::Mat<double> temp_basis_correlation = arma::diagmat((arma::Col<double>) basis_cor_diag);
-    arma::Mat<double> temp_basis_covariance = arma::diagmat((arma::Col<double>) basis_variance);
+    std::vector<float> basis_cor_diag(otu_table->otu_number, 1);
+    arma::Mat<float> temp_basis_correlation = arma::diagmat((arma::Col<float>) basis_cor_diag);
+    arma::Mat<float> temp_basis_covariance = arma::diagmat((arma::Col<float>) basis_variance);
 
     // Calculate correlation and covariance for each element add set in basis matrices
     for (int i = 0; i < otu_table->otu_number - 1; ++i) {
         for (int j = i + 1; j < otu_table->otu_number; ++j) {
             // Calculate cor and cov
-            double basis_cov_el = 0.5 * (basis_variance(i) + basis_variance(j) - fraction_variance(i, j));
-            double basis_cor_el = basis_cov_el / std::sqrt(basis_variance(i)) / std::sqrt(basis_variance(j));
+            float basis_cov_el = 0.5 * (basis_variance(i) + basis_variance(j) - fraction_variance(i, j));
+            float basis_cor_el = basis_cov_el / std::sqrt(basis_variance(i)) / std::sqrt(basis_variance(j));
 
             // Check if we got a valid correlation
             if (abs(basis_cor_el) > 1) {
@@ -320,14 +320,14 @@ void FastSparIteration::calculate_correlation_and_covariance(){
 // Find the highest correlation and exclude this pair if correlation is above threshold
 void FastSparIteration::find_and_exclude_pairs(float threshold) {
     // Set diagonal to zero as we're not interesting in excluding self-pairs and get absolute correlation value
-    arma::Mat<double> basis_correlation_abs = arma::abs(basis_correlation);
+    arma::Mat<float> basis_correlation_abs = arma::abs(basis_correlation);
     basis_correlation_abs.diag().zeros();
 
     // Set previously excluded correlations to zero
     basis_correlation_abs((arma::Col<arma::uword>)excluded_pairs).fill(0.0);
 
     // Get all elements with the max value
-    double max_correlate = basis_correlation_abs.max();
+    float max_correlate = basis_correlation_abs.max();
     arma::Col<arma::uword> max_correlate_idx = arma::find(basis_correlation_abs == max_correlate);
 
     // If max correlation is above a threshold, subtract one from the appropriate mod matrix positions
@@ -365,48 +365,48 @@ void FastSparIteration::find_and_exclude_pairs(float threshold) {
 void FastSpar::calculate_median_correlation_and_covariance() {
     // Get median of all i,j elements across the iterations for correlation
     // Add correlation matrices to arma Cube so that we can get views of all i, j of each matrix
-    arma::Cube<double> correlation_cube(otu_table->otu_number, otu_table->otu_number, correlation_vector.size());
+    arma::Cube<float> correlation_cube(otu_table->otu_number, otu_table->otu_number, correlation_vector.size());
     correlation_cube.fill(0.0);
 
     // Fill cube with correlation matrix slices
     int cube_slice = 0;
-    for (std::vector<arma::Mat<double>>::iterator it = correlation_vector.begin();
+    for (std::vector<arma::Mat<float>>::iterator it = correlation_vector.begin();
          it != correlation_vector.end(); ++it) {
         correlation_cube.slice(cube_slice) = *it;
         ++cube_slice;
     }
 
     // Get median value for each i, j element across all n iterations
-    arma::Mat<double> temp_median_correlation(otu_table->otu_number, otu_table->otu_number);
+    arma::Mat<float> temp_median_correlation(otu_table->otu_number, otu_table->otu_number);
     for (int i = 0; i < otu_table->otu_number; ++i) {
         for (int j = 0; j < otu_table->otu_number; ++j) {
-            arma::Row<double> r = correlation_cube.subcube(arma::span(i), arma::span(j), arma::span());
+            arma::Row<float> r = correlation_cube.subcube(arma::span(i), arma::span(j), arma::span());
             temp_median_correlation(i, j) = arma::median(r);
         }
     }
 
     // Get median for diagonal elements across iterations for covariance
     // Add covariance diagonals to arma Mat so that we can get row views for all i, j elements
-    arma::Mat<double> covariance_diagonals(otu_table->otu_number, iterations);
+    arma::Mat<float> covariance_diagonals(otu_table->otu_number, iterations);
 
     // Fill matrix will covariance diagonals
     int matrix_column = 0;
-    for (std::vector<arma::Col<double>>::iterator it = covariance_vector.begin(); it != covariance_vector.end(); ++it) {
+    for (std::vector<arma::Col<float>>::iterator it = covariance_vector.begin(); it != covariance_vector.end(); ++it) {
         covariance_diagonals.col(matrix_column) = *it;
         ++matrix_column;
     }
 
     // Get the median of each i, j element
-    arma::Col<double> median_covariance_diag = arma::median(covariance_diagonals, 1);
+    arma::Col<float> median_covariance_diag = arma::median(covariance_diagonals, 1);
 
     // Split into coordinate meshed grid
-    arma::Mat<double> median_covariance_y(otu_table->otu_number, otu_table->otu_number);
-    arma::Mat<double> median_covariance_x(otu_table->otu_number, otu_table->otu_number);
+    arma::Mat<float> median_covariance_y(otu_table->otu_number, otu_table->otu_number);
+    arma::Mat<float> median_covariance_x(otu_table->otu_number, otu_table->otu_number);
     median_covariance_y.each_col() = median_covariance_diag;
-    median_covariance_x.each_row() = arma::conv_to<arma::Row<double>>::from(median_covariance_diag);
+    median_covariance_x.each_row() = arma::conv_to<arma::Row<float>>::from(median_covariance_diag);
 
     // Calculate final median covariance
-    arma::Mat<double> temp_median_covariance(otu_table->otu_number, otu_table->otu_number);
+    arma::Mat<float> temp_median_covariance(otu_table->otu_number, otu_table->otu_number);
     temp_median_covariance = temp_median_correlation % arma::pow(median_covariance_x, 0.5) % arma::pow(median_covariance_y, 0.5);
 
     // Move the temp matrices to FastSpar

@@ -19,7 +19,7 @@ SquareMatrix load_square_matrix(std::string filename) {
     element_count = std::count(line.begin(), line.end(), '\t');
 
     /* Now read in elements of sequare matrix */
-    std::vector<double> element_vector;
+    std::vector<float> element_vector;
     std::vector<std::string> otu_vector;
     element_vector.reserve(element_count * element_count);
     otu_vector.reserve(element_count);
@@ -39,7 +39,7 @@ SquareMatrix load_square_matrix(std::string filename) {
                 id = false;
                 continue;
             }
-            // Add current element to correlation mat after converting to double
+            // Add current element to correlation mat after converting to float
             element_vector.push_back(std::stod(ele));
         }
     }
@@ -52,7 +52,7 @@ SquareMatrix load_square_matrix(std::string filename) {
 
 SparseMatrix filter_matrix(SquareMatrix table, arma::Col<arma::uword> filtered_element_indices) {
     // Extract elements which pass filter
-    arma::Col<double> filtered_table = table.elements(filtered_element_indices);
+    arma::Col<float> filtered_table = table.elements(filtered_element_indices);
 
     // Record col and row names for OTUs elements in vector
     std::vector<std::vector<std::string>> otus(filtered_element_indices.n_elem, std::vector<std::string>(2));

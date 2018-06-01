@@ -11,7 +11,7 @@ void OtuTable::load_otu_file(std::string filename) {
     std::string line;
     std::string ele;
     std::stringstream line_stream;
-    std::vector<double> temp_counts_vector;
+    std::vector<float> temp_counts_vector;
     bool id;
     // Open file stream
     std::ifstream otu_file;
@@ -52,25 +52,25 @@ void OtuTable::load_otu_file(std::string filename) {
                 id = false;
                 continue;
             }
-            // Add current element to OTU count after converting to double; some OTUs may be corrected and therefore a double
-            temp_counts_vector.push_back(std::stod(ele));
+            // Add current element to OTU count after converting to float; some OTUs may be corrected and therefore a float
+            temp_counts_vector.push_back(std::stof(ele));
         }
         ++otu_number;
     }
     // Finally construct the OTU observation matrix and _move_ to struct
-    arma::Mat<double> temp_otu_matrix(temp_counts_vector);
+    arma::Mat<float> temp_otu_matrix(temp_counts_vector);
     temp_otu_matrix.reshape(sample_number, otu_number);
     counts = std::move(temp_otu_matrix);
 }
 
 
 // Load a correlation table from file
-arma::Mat<double> load_correlation_file(std::string &filename) {
+arma::Mat<float> load_correlation_file(std::string &filename) {
     // Used to store strings from file prior to matrix construction and other variables
     std::string line;
     std::string ele;
     std::stringstream line_stream;
-    std::vector<double> correlations_vector;
+    std::vector<float> correlations_vector;
     bool id;
 
     // Open file stream
@@ -99,19 +99,19 @@ arma::Mat<double> load_correlation_file(std::string &filename) {
                 id = false;
                 continue;
             }
-            // Add current element to correlation mat after converting to double
-            correlations_vector.push_back(std::stod(ele));
+            // Add current element to correlation mat after converting to float
+            correlations_vector.push_back(std::stof(ele));
         }
     }
 
     // Construct matrix and return it
-    arma::Mat<double> correlations(correlations_vector);
+    arma::Mat<float> correlations(correlations_vector);
     correlations.reshape(otu_number, otu_number);
     return correlations;
 }
 
 
-void write_out_square_otu_matrix(arma::Mat<double> &matrix, OtuTable &otu_table, std::string filename) {
+void write_out_square_otu_matrix(arma::Mat<float> &matrix, OtuTable &otu_table, std::string filename) {
     // Get stream handle
     std::ofstream outfile;
     outfile.open(filename);
@@ -167,12 +167,12 @@ int int_from_optarg(const char *optarg) {
 float float_from_optarg(const char *optarg) {
     // Check at most the first 8 characters are numerical
     std::string optstring(optarg);
-    std::string string_double = optstring.substr(0, 8);
-    for (std::string::iterator it = string_double.begin(); it != string_double.end(); ++it) {
+    std::string string_float = optstring.substr(0, 8);
+    for (std::string::iterator it = string_float.begin(); it != string_float.end(); ++it) {
         if (!isdigit(*it) && (*it) != '.') {
-            fprintf(stderr, "This doesn't look like a usable double: %s\n", optarg);
+            fprintf(stderr, "This doesn't look like a usable float: %s\n", optarg);
             exit(1);
         }
     }
-    return std::atof(string_double.c_str());
+    return std::atof(string_float.c_str());
 }

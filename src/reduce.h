@@ -12,17 +12,17 @@
 
 // Structure to hold information about a square matrix
 struct SquareMatrix {
-    arma::Mat<double> elements;
+    arma::Mat<float> elements;
     std::vector<std::string> otus;
 
     // Using initaliser lists to enable calling on Mat/vector constructors at the time of struct construction
-    SquareMatrix(std::vector<double> element_vector, std::vector<std::string> otu_vector) : elements(element_vector), otus(otu_vector) {}
+    SquareMatrix(std::vector<float> element_vector, std::vector<std::string> otu_vector) : elements(element_vector), otus(otu_vector) {}
 };
 
 
 // Structure to hold information about a sparse matrix
 struct SparseMatrix {
-    arma::Col<double> elements;
+    arma::Col<float> elements;
     std::vector<std::vector<std::string>> otus;
 };
 

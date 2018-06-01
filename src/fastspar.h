@@ -33,12 +33,12 @@ struct FastSpar {
     const OtuTable *otu_table;
 
     // List of each correlation and covariance matrix calculated during iterations
-    std::vector<arma::Mat<double>> correlation_vector;
-    std::vector<arma::Col<double>> covariance_vector;
+    std::vector<arma::Mat<float>> correlation_vector;
+    std::vector<arma::Col<float>> covariance_vector;
 
     // The median correlation covariance of all iterations
-    arma::Mat<double> median_correlation;
-    arma::Mat<double> median_covariance;
+    arma::Mat<float> median_correlation;
+    arma::Mat<float> median_covariance;
 
 
     // Construct FastSpar with a given otu_table and other parameters
@@ -59,22 +59,22 @@ struct FastSparIteration {
     unsigned int exclusion_threshold;
 
     // Estimated fractions of OTUs
-    arma::Mat<double> fraction_estimates;
+    arma::Mat<float> fraction_estimates;
     // Variance of estimated OTU fractions
-    arma::Mat<double> fraction_variance;
+    arma::Mat<float> fraction_variance;
 
     // List of highly OTU pairs excluded in this iteration and number of components remaining
     std::vector<arma::uword> excluded_pairs;
     unsigned int components_remaining;
 
     // Modifier matrix (lhs in dgesv)
-    arma::Mat<double> mod;
+    arma::Mat<float> mod;
     // Basis variance vector
-    arma::Col<double> basis_variance;
+    arma::Col<float> basis_variance;
 
     // Correlation and covariance for this iteration
-    arma::Mat<double> basis_correlation;
-    arma::Mat<double> basis_covariance;
+    arma::Mat<float> basis_correlation;
+    arma::Mat<float> basis_covariance;
 
 
     // Construct FastSparIterations with a given otu_table and other parameters

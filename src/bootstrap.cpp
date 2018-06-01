@@ -2,8 +2,8 @@
 
 
 // Get bootstrap samples
-arma::Mat<double> get_bootstrap(OtuTable &otu_table, gsl_rng *p_rng) {
-    arma::Mat<double> bootstrap(otu_table.sample_number, otu_table.otu_number);
+arma::Mat<float> get_bootstrap(OtuTable &otu_table, gsl_rng *p_rng) {
+    arma::Mat<float> bootstrap(otu_table.sample_number, otu_table.otu_number);
     for (int j = 0; j < otu_table.otu_number; ++j) {
         // Get a random list of sample indices equal to the number of samples
         std::vector<arma::uword> indices(otu_table.sample_number);
@@ -33,7 +33,7 @@ void get_and_write_bootstraps(OtuTable &otu_table, unsigned int bootstrap_number
 #pragma omp parallel for schedule(static, 1)
     for (unsigned int i = 0; i < bootstrap_number; ++i) {
         // Get the bootstrap
-        arma::Mat<double> bootstrap = get_bootstrap(otu_table, p_rng);
+        arma::Mat<float> bootstrap = get_bootstrap(otu_table, p_rng);
 
         // Transpose matrix in place before writing out
         printf("\tWriting out bootstrapped %i\n", i);
@@ -47,7 +47,7 @@ void get_and_write_bootstraps(OtuTable &otu_table, unsigned int bootstrap_number
 }
 
 
-void write_out_bootstrap_table(arma::Mat<double> &bootstrap, std::vector<std::string> otu_ids, std::string filepath) {
+void write_out_bootstrap_table(arma::Mat<float> &bootstrap, std::vector<std::string> otu_ids, std::string filepath) {
     // Get file handle
      FILE *filehandle = fopen(filepath.c_str(), "w");
 

@@ -20,8 +20,8 @@ TEST_CASE("Correlation, covariance statisitc integration test") {
     fastspar.calculate_median_correlation_and_covariance();
 
     // Compare to previously validated outputs
-    arma::Mat<double> correlation = load_correlation_file(correlation_fp);
-    arma::Mat<double> covariance = load_correlation_file(covariance_fp);
+    arma::Mat<float> correlation = load_correlation_file(correlation_fp);
+    arma::Mat<float> covariance = load_correlation_file(covariance_fp);
 
     // Tolerating difference of 0.0001 as output types are rounded
     REQUIRE(arma::approx_equal(fastspar.median_correlation, correlation, "absdiff", 0.001));
