@@ -1,1 +1,1 @@
-const std::string VERSION ("0.0.6");
+const std::string VERSION ("0.0.7");
