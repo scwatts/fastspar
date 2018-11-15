@@ -12,6 +12,7 @@ Rapid and scalable correlation estimation for compositional data
 * [Requirements](#requirements)
 * [Installing](#installing)
 * [Usage](#usage)
+* [Contributors](#contributors)
 * [License](#license)
 
 
@@ -121,6 +122,13 @@ If `FastSpar` is compiled with OpenMP, threading can be used by invoking `--thre
 ```bash
 fastspar --otu_table tests/data/fake_data.txt --correlation median_correlation.tsv --covariance median_covariance.tsv --iterations 50 --threads 10
 ```
+
+
+## Contributors
+* **[Scott Ritchie](https://github.com/sritchie73)**
+  * Advised on use of permutation based statistical testing
+  * Provided an example use of `statmod::permp`
+
 
 ## License
 [GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0.en.html)
