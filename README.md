@@ -63,7 +63,7 @@ GNU autoconf-archive
 GNU m4
 ```
 
-After meeting the above requirements, cmompiling and installing `FastSpar` from source can be done by:
+After meeting the above requirements, compiling and installing `FastSpar` from source can be done by:
 ```bash
 git clone https://github.com/scwatts/fastspar.git
 cd fastspar
@@ -94,9 +94,9 @@ fastspar --threshold 0.2 --otu_table tests/data/fake_data.tsv --correlation medi
 
 
 ### Calculation of exact *p*-values
-There are several methods to calculate *p*-values for inferred correlations. Here we have elected to use a robust permutation based approach. This process involves infering correlation from random permutations of the original OTU count data. The magnitude of each *p*-value is related to how often a more extreme correlation is observed for randomly permutated data. In the below example, we calculate *p*-values from 1000 bootstrap correlations.
+There are several methods to calculate *p*-values for inferred correlations. Here we have elected to use a robust permutation based approach. This process involves inferring correlation from random permutations of the original OTU count data. The magnitude of each *p*-value is related to how often a more extreme correlation is observed for randomly permutated data. In the below example, we calculate *p*-values from 1000 bootstrap correlations.
 
-First we generate the 1000 boostrap counts:
+First we generate the 1000 bootstrap counts:
 
 ```bash
 mkdir bootstrap_counts
