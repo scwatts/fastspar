@@ -33,17 +33,17 @@ There are no requirements for using the pre-compiled static binaries on 64-bit l
 
 
 ## Installing
-`FastSpar` can be installed via pre-compiled binaries or from source.
+`FastSpar` can be installed via pre-compiled binaries, Bioconda, or from source.
 
 
 ### GNU/Linux
 For most 64-bit linux distributions (e.g. Ubuntu, Debian, RedHat, etc) the easiest way to obtain `FastSpar` is via statically compiled binaries on the releases page. These binaries can be downloaded and run immediately without any setup as they have no dependencies.
 
 
-### macOS
-On macOS, `FastSpar` can be installed using homebrew. The GitHub repository contains a brew recipe which handles dependency resolution, compilation and installation for `FastSpar`. To use the brew recipe (on systems with homebrew installed), the below command can be run:
+### Bioconda
+`FastSpar` is available through Bioconda (thanks to [@epruesse](https://github.com/epruesse)):
 ```bash
-brew install https://raw.githubusercontent.com/scwatts/fastspar/master/scripts/fastspar.rb
+conda install -c bioconda -c conda-forge fastspar
 ```
 
 
