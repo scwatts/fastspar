@@ -23,7 +23,7 @@ An important step of correlation analysis is removal of noise and dimension redu
 
 
 ## Citation
-If you use this tool, please cite the `FastSpar` preprint and original SparCC paper:
+If you use this tool, please cite the `FastSpar` paper and original SparCC paper:
 * [Watts, S. C., Ritchie, S. C., Inouye, M., & Holt, K. E. (2018). FastSpar: rapid and scalable correlation estimation for compositional data. Bioinformatics. doi: 10.1093/bioinformatics/bty734](https://doi.org/10.1093/bioinformatics/bty734)
 * [Friedman, J. & Alm, E.J. (2017). Inferring correlation networks from genomic survey data. PLoS Comput. Biol. 8, e1002687.](http://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1002687)
 
