@@ -12,12 +12,17 @@
 // TODO: break into unittests
 TEST_CASE("p-value integration test") {
     // Input data
-    std::string otu_fp("data/fake_data.tsv");
-    std::string observed_correlation_fp("data/fake_data_cor.tsv");
-    std::vector<std::string> bs_correlation_fps = {"data/fake_data_cor_bs_1.tsv", "data/fake_data_cor_bs_2.tsv", "data/fake_data_cor_bs_3.tsv"};
+    std::string data_dir = std::string(DATADIR);
+    std::string otu_fp = data_dir + "data/fake_data.tsv";
+    std::string observed_correlation_fp = data_dir + "data/fake_data_cor.tsv";
+    std::vector<std::string> bs_correlation_fps = {
+        data_dir + "data/fake_data_cor_bs_1.tsv",
+        data_dir + "data/fake_data_cor_bs_2.tsv",
+        data_dir + "data/fake_data_cor_bs_3.tsv"
+    };
 
-    std::string pseudo_fp("data/fake_data_pseudo_pvalues.tsv");
-    std::string exact_fp("data/fake_data_exact_pvalues.tsv");
+    std::string pseudo_fp = data_dir + "data/fake_data_pseudo_pvalues.tsv";
+    std::string exact_fp = data_dir + "data/fake_data_exact_pvalues.tsv";
 
     // Load data used in calculation
     OtuTable otu_table;

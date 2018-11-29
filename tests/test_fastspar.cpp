@@ -8,9 +8,10 @@
 // TODO: break into unittests
 TEST_CASE("Correlation, covariance statisitc integration test") {
     // Input files
-    std::string otu_fp("data/fake_data.tsv");
-    std::string correlation_fp("data/fake_data_cor.tsv");
-    std::string covariance_fp("data/fake_data_cov.tsv");
+    std::string data_dir = std::string(DATADIR);
+    std::string otu_fp = data_dir + "data/fake_data.tsv";
+    std::string correlation_fp = data_dir + "data/fake_data_cor.tsv";
+    std::string covariance_fp = data_dir + "data/fake_data_cov.tsv";
 
     // Run correlations
     OtuTable otu_table;

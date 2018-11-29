@@ -1,6 +1,6 @@
 # Compiler flags
-AM_CXXFLAGS=-std=c++11 -Wall -Wextra -fopenmp
-AM_FFLAGS=-Wall -Wextra
+AM_CXXFLAGS = -std=c++11 -Wall -Wextra -fopenmp
+AM_FFLAGS = -Wall -Wextra
 
 # If we're not using the Armadillo wrapper, set macro as described in documentation
 if ARMA_DONT_USE_WRAPPER
@@ -13,10 +13,11 @@ AM_CXXFLAGS += -static
 endif
 
 # Sources
-fastspar_fps = fastspar.cpp fastspar_opts.cpp common.cpp
-fastspar_bootstrap_fps = bootstrap.cpp bootstrap_opts.cpp common.cpp
-fastspar_pvalues_fps = pvalue.cpp pvalue_opts.cpp gaussq.f common.cpp
-fastspar_reduce_fps = reduce.cpp reduce_opts.cpp common.cpp
+common_fps = common.cpp common.h local_config.h
+fastspar_fps = fastspar.cpp fastspar.h fastspar_opts.cpp fastspar_opts.h $(common_fps)
+fastspar_bootstrap_fps = bootstrap.cpp bootstrap.h bootstrap_opts.cpp bootstrap_opts.h $(common_fps)
+fastspar_pvalues_fps = pvalue.cpp pvalue.h pvalue_opts.cpp pvalue_opts.h gaussq.f $(common_fps)
+fastspar_reduce_fps = reduce.cpp reduce.h reduce_opts.cpp reduce_opts.h $(common_fps)
 
 # Libraries for testing
 check_LIBRARIES = libfastspar.a libfastspar_bootstrap.a libfastspar_pvalues.a libfastspar_reduce.a
