@@ -25,13 +25,21 @@ void get_and_write_bootstraps(OtuTable &otu_table, unsigned int bootstrap_number
     // OpenMP function from omp.h. This sets the number of threads in a more reliable way but also ignores OMP_NUM_THREADS
     omp_set_num_threads(threads);
 
-    // Set up rng environment and seed
-    gsl_rng *p_rng = get_default_rng_handle(seed);
+    // Create an rng for each thread; gsl_rng_default is a global
+    std::vector<gsl_rng *> p_rngs;
+    for (size_t i = 0; i < threads; i++) {
+        gsl_rng *p_rng = gsl_rng_alloc(gsl_rng_default);
+        p_rngs.push_back(p_rng);
+    }
 
     // Get specified number of bootstrap samples
     printf("Generating bootstrapped samples\n");
 #pragma omp parallel for schedule(static, 1)
     for (unsigned int i = 0; i < bootstrap_number; ++i) {
+        // Get thread rng and set thread-stable seed
+        gsl_rng *p_rng = p_rngs[omp_get_thread_num()];
+        gsl_rng_set(p_rng, seed+i);
+
         // Get the bootstrap
         arma::Mat<float> bootstrap = get_bootstrap(otu_table, p_rng);
 
@@ -43,7 +51,9 @@ void get_and_write_bootstraps(OtuTable &otu_table, unsigned int bootstrap_number
     }
 
     // Free rng memory
-    gsl_rng_free(p_rng);
+    for (const auto& p_rng : p_rngs) {
+        gsl_rng_free(p_rng);
+    }
 }
 
 

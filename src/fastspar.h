@@ -19,7 +19,8 @@ struct FastSpar {
     unsigned int exclusion_threshold;
 
     // RNG
-    gsl_rng *p_rng;
+    int seed;
+    std::vector<gsl_rng *> p_rngs;
 
     // Threads to use during iteration
     unsigned int threads;
@@ -42,7 +43,7 @@ struct FastSpar {
 
 
     // Construct FastSpar with a given otu_table and other parameters
-    FastSpar(const OtuTable *_otu_table, unsigned int _iterations, unsigned int _exclusion_iterations, unsigned int _exclusion_threshold, unsigned int _threads, unsigned int seed);
+    FastSpar(const OtuTable *_otu_table, unsigned int _iterations, unsigned int _exclusion_iterations, unsigned int _exclusion_threshold, unsigned int _threads, unsigned int _seed);
 
     // Infer correlation and covariance for n iterations
     void infer_correlation_and_covariance();

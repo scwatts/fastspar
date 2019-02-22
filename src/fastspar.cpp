@@ -97,13 +97,18 @@ bool continue_exit_prompt() {
 ///////////////////////////////
 
 // Initialise a FastSpar object (must be parsed a pointer to an OTU table struct and other paramters)
-FastSpar::FastSpar(const OtuTable *_otu_table, unsigned int _iterations, unsigned int _exclusion_iterations, unsigned int _exclusion_threshold, unsigned int _threads, unsigned int seed) {
+FastSpar::FastSpar(const OtuTable *_otu_table, unsigned int _iterations, unsigned int _exclusion_iterations, unsigned int _exclusion_threshold, unsigned int _threads, unsigned int _seed) {
     otu_table = _otu_table;
     iterations = _iterations;
     exclusion_iterations = _exclusion_iterations;
     exclusion_threshold = _exclusion_threshold;
     threads = _threads;
-    p_rng = get_default_rng_handle(seed);
+    seed = _seed;
+    for (size_t i = 0; i < _threads; i++) {
+        // rng for each thread; gsl_rng_default is a global
+        gsl_rng *p_rng = gsl_rng_alloc(gsl_rng_default);
+        p_rngs.push_back(p_rng);
+    }
 
     // OpenMP function from omp.h. This sets the number of threads in a more reliable way but also ignores OMP_NUM_THREADS
     omp_set_num_threads(threads);
@@ -145,6 +150,10 @@ void FastSpar::infer_correlation_and_covariance() {
         fprintf(stdout, "\tRunning iteration: %i\n", i + 1);
 
         // TODO: Refactor as a method for FastSparIterations
+
+        // Get thread rng and set thread-stable seed
+        gsl_rng *p_rng = p_rngs[omp_get_thread_num()];
+        gsl_rng_set(p_rng, seed+i);
 
         // STEP 1: Estimate component fractions and get log ratio variance
         fastspar_iteration.estimate_component_fractions(p_rng);
@@ -192,7 +201,9 @@ void FastSpar::infer_correlation_and_covariance() {
     }
 
     // Free rng memory
-    gsl_rng_free(p_rng);
+    for (const auto& p_rng : p_rngs) {
+        gsl_rng_free(p_rng);
+    }
 }
 
 

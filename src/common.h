@@ -43,9 +43,6 @@ arma::Mat<float> load_correlation_file(std::string &filename);
 // Save an square OTU matrix (e.g. correlation matrix) to file
 void write_out_square_otu_matrix(arma::Mat<float> &matrix, OtuTable &otu_table, std::string filename);
 
-// Set up rng environment and return default rng
-gsl_rng *get_default_rng_handle(unsigned int seed);
-
 // Convert character to integer (for commandline argument parsing)
 int int_from_optarg(const char *optarg);
 
