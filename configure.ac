@@ -1,5 +1,5 @@
 # Initialisation
-AC_INIT([fastspar], [0.0.9], [s.watts2@student.unimelb.edu.au])
+AC_INIT([fastspar], [0.0.10], [s.watts2@student.unimelb.edu.au])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([foreign -Wall -Werror])
 
