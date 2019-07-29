@@ -51,7 +51,7 @@ AC_CHECK_LIB([quadmath], [quadmath_snprintf],
 AC_CHECK_LIB([gfortran], [main],
              [], [AC_MSG_ERROR([could not find the library gfortran])])
 
-AX_BLAS([], [AC_MSG_ERROR([could not find the library gfortran])])
+AX_BLAS([], [AC_MSG_ERROR([could not find the library BLAS])])
 
 # Set libraries as specified by AX_BLAS documentation
 LIBS="$BLAS_LIBS $LIBS $FLIBS"

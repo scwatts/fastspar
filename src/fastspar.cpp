@@ -7,9 +7,6 @@
 
 #if defined(FASTSPAR_CPACKAGE) && !defined(LIBRARY)
 int main(int argc, char **argv) {
-    // Starting message
-    fprintf(stdout, "Starting FastSpar\n");
-
     // Get commandline options
     FastsparOptions fastspar_options = get_commandline_arguments(argc, argv);
 
