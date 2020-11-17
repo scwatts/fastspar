@@ -15,11 +15,6 @@ AC_ARG_ENABLE([arma-wrapper], AS_HELP_STRING([--disable-arma-wrapper], [Disables
 	  *)   arma_wrapper=false;;
 	esac], [arma_wrapper=true])
 
-# Check that the Armadillo runtime library is installed if we need it
-AS_IF([test "x$static_compile" = "xfalse" && test "x$arma_wrapper" = "xtrue"],
-      [AC_CHECK_LIB([armadillo], [main],
-                    [], AC_MSG_ERROR([could not find the library Armadillo]))])
-
 # Set conditionals to use in the Makefile.am
 AM_CONDITIONAL([ARMA_DONT_USE_WRAPPER],
                [test "x$static_compile" = "xtrue" || test "x$arma_wrapper" = "xfalse"])
@@ -51,7 +46,15 @@ AC_CHECK_LIB([quadmath], [quadmath_snprintf],
 AC_CHECK_LIB([gfortran], [main],
              [], [AC_MSG_ERROR([could not find the library gfortran])])
 
+AC_CHECK_LIB([arpack], [main],
+             [], [AC_MSG_ERROR([could not find the library arpack])])
+
 AX_BLAS([], [AC_MSG_ERROR([could not find the library BLAS])])
+
+# Check that the Armadillo runtime library is installed if we need it
+AS_IF([test "x$static_compile" = "xfalse" && test "x$arma_wrapper" = "xtrue"],
+      [AC_CHECK_LIB([armadillo], [main],
+                    [], AC_MSG_ERROR([could not find the library Armadillo]))])
 
 # Set libraries as specified by AX_BLAS documentation
 LIBS="$BLAS_LIBS $LIBS $FLIBS"
