@@ -33,15 +33,11 @@ There are no requirements for using the pre-compiled static binaries on 64-bit l
 
 
 ## Installing
-`FastSpar` can be installed via pre-compiled binaries, Bioconda, or from source.
+`FastSpar` can be installed using conda or from source.
 
 
-### GNU/Linux
-For most 64-bit linux distributions (e.g. Ubuntu, Debian, RedHat, etc) the easiest way to obtain `FastSpar` is via statically compiled binaries on the releases page. These binaries can be downloaded and run immediately without any setup as they have no dependencies.
-
-
-### Bioconda
-`FastSpar` is available through Bioconda (thanks to [@epruesse](https://github.com/epruesse)):
+## Conda
+To install through conda, use:
 ```bash
 conda install -c bioconda -c conda-forge fastspar
 ```
@@ -55,13 +51,23 @@ OpenMP 4.0+
 Gfortran
 Armadillo 6.7+
 LAPACK
-BLAS (OpenBLAS is recommended)
+OpenBLAS
 GNU Scientific Library 2.1+
 GNU getopt
 GNU make
 GNU autoconf
 GNU autoconf-archive
 GNU m4
+```
+
+These dependencies can be install with the following packages on ubuntu 20.04:
+```
+build-essential
+gfortran
+dh-autoreconf
+libarmadillo-dev
+libopenblas-openmp-dev
+libgsl-dev
 ```
 
 After meeting the above requirements, compiling and installing `FastSpar` from source can be done by:
@@ -125,9 +131,11 @@ fastspar --otu_table tests/data/fake_data.txt --correlation median_correlation.t
 
 
 ## Contributors
-* **[Scott Ritchie](https://github.com/sritchie73)**
+* **[sritchie73](https://github.com/sritchie73)**
   * Advised on use of permutation based statistical testing
   * Provided an example use of `statmod::permp`
+* **[@epruesse](https://github.com/epruesse)**
+  * Created bioconda recipe
 
 
 ## License
