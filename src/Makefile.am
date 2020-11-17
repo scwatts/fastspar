@@ -1,6 +1,6 @@
 # Compiler flags
 AM_CXXFLAGS = -std=c++11 -Wall -Wextra -fopenmp
-AM_FFLAGS = -Wall -Wextra
+AM_FFLAGS = -Wall -Wextra -fPIE
 
 # If we're not using the Armadillo wrapper, set macro as described in documentation
 if ARMA_DONT_USE_WRAPPER
