@@ -1,6 +1,9 @@
 #include "fastspar.h"
 
 
+extern "C" void openblas_set_num_threads(int num_threads);
+
+
 ///////////////////////////////
 //      FastSpar entry       //
 ///////////////////////////////
@@ -110,8 +113,9 @@ FastSpar::FastSpar(const OtuTable *_otu_table, unsigned int _iterations, unsigne
         p_rngs.push_back(p_rng);
     }
 
-    // OpenMP function from omp.h. This sets the number of threads in a more reliable way but also ignores OMP_NUM_THREADS
+    // Force number of threads, ignore OMP_NUM_THREADS and OPENBLAS_NUM_THREADS
     omp_set_num_threads(threads);
+    openblas_set_num_threads(1);
 }
 
 
