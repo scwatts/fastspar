@@ -1,7 +1,7 @@
 # Initialisation
 AC_INIT([fastspar], [0.0.10], [s.watts2@student.unimelb.edu.au])
-AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([foreign -Wall -Werror])
+AC_LANG([C++])
 
 # Add option for static compilation and option to not use Arma wrapper
 AC_ARG_ENABLE([static-compile], AS_HELP_STRING([--enable-static-compile], [Compile static binary; forces --disable-arma-wrapper]),
@@ -28,36 +28,50 @@ AC_PROG_RANLIB
 AM_PROG_AR
 
 # Check dependencies
-AC_CHECK_LIB([gomp], [main],
-             [], [AC_MSG_ERROR([could not find the library OpenMP])])
+if $CXX --version 2>&1 | grep Open64 > /dev/null ; then
+  # Open64
+  AC_CHECK_LIB([openmp], [omp_get_num_threads],
+               [OMP_LIBS="-lopenmp"], [])
+elif $CXX --version 2>&1 | grep clang > /dev/null ; then
+  # Clang
+  AC_CHECK_LIB([omp], [GOMP_parallel_start],
+               [OMP_LIBS="-lomp"], [])
+else
+  # GCC
+  AC_CHECK_LIB([gomp], [omp_get_num_threads],
+               [OMP_LIBS="-lgomp"], [])
+fi
+AS_IF([test "x$OMP_LIBS" == "x"], [AC_MSG_ERROR([could not find an openmp library])])
 
 AC_CHECK_LIB([m], [cos],
-             [], [AC_MSG_ERROR([could not find the library LibM])])
+             [], [AC_MSG_ERROR([could not find the libm library])])
 
 AC_CHECK_LIB([gslcblas], [cblas_dgemm],
-             [], [AC_MSG_ERROR([could not find the library GSL \(gslcblas\)])])
+             [], [AC_MSG_ERROR([could not find the gslcblas library])])
 
 AC_CHECK_LIB([gsl], [gsl_ran_dirichlet],
-             [], [AC_MSG_ERROR([could not find the library GSL])])
+             [], [AC_MSG_ERROR([could not find the gsl library])])
 
 AC_CHECK_LIB([quadmath], [quadmath_snprintf],
-             [], [AC_MSG_ERROR([could not find the library quadmath])])
+             [], [AC_MSG_ERROR([could not find the quadmath library])])
 
 AC_CHECK_LIB([gfortran], [main],
-             [], [AC_MSG_ERROR([could not find the library gfortran])])
+             [], [AC_MSG_ERROR([could not find the gfortran library])])
 
 AC_CHECK_LIB([arpack], [main],
-             [], [AC_MSG_ERROR([could not find the library arpack])])
+             [], [AC_MSG_ERROR([could not find the arpack library])])
 
-AX_BLAS([], [AC_MSG_ERROR([could not find the library BLAS])])
+AC_F77_FUNC(sgemm)
+AC_CHECK_LIB([openblas], [$sgemm],
+             [], [AC_MSG_ERROR([could not find the openblas library])])
 
 # Check that the Armadillo runtime library is installed if we need it
 AS_IF([test "x$static_compile" = "xfalse" && test "x$arma_wrapper" = "xtrue"],
       [AC_CHECK_LIB([armadillo], [main],
-                    [], AC_MSG_ERROR([could not find the library Armadillo]))])
+                    [], AC_MSG_ERROR([could not find the library armadillo]))])
 
-# Set libraries as specified by AX_BLAS documentation
-LIBS="$BLAS_LIBS $LIBS $FLIBS"
+# Add openblas and openmp libraries
+LIBS="-lopenblas $LIBS $OMP_LIBS"
 
 # Set config headers and makefiles
 AC_CONFIG_HEADERS([config.h])

@@ -57,7 +57,6 @@ GNU getopt
 GNU make
 GNU autoconf
 GNU autoconf-archive
-GNU m4
 ```
 
 These dependencies can be install with the following packages on ubuntu 20.04:
