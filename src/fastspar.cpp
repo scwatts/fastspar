@@ -17,7 +17,6 @@ int main(int argc, char **argv) {
     OtuTable otu_table;
     otu_table.load_otu_file(fastspar_options.otu_filename);
 
-
     // Check that OTUs have variance in their counts
     std::vector<int> invariant_otus;
     for (int i = 0; i < otu_table.otu_number; ++i) {
@@ -100,7 +99,7 @@ bool continue_exit_prompt() {
 ///////////////////////////////
 
 // Initialise a FastSpar object (must be parsed a pointer to an OTU table struct and other paramters)
-FastSpar::FastSpar(const OtuTable *_otu_table, unsigned int _iterations, unsigned int _exclusion_iterations, unsigned int _exclusion_threshold, unsigned int _threads, unsigned int _seed) {
+FastSpar::FastSpar(const OtuTable *_otu_table, unsigned int _iterations, unsigned int _exclusion_iterations, float _exclusion_threshold, unsigned int _threads, unsigned int _seed) {
     otu_table = _otu_table;
     iterations = _iterations;
     exclusion_iterations = _exclusion_iterations;
@@ -120,7 +119,7 @@ FastSpar::FastSpar(const OtuTable *_otu_table, unsigned int _iterations, unsigne
 
 
 // Initialise a FastSpar object (must be parsed a pointer to an OTU table struct and other paramters)
-FastSparIteration::FastSparIteration(const OtuTable *_otu_table, unsigned int _exclusion_iterations, unsigned int _exclusion_threshold) {
+FastSparIteration::FastSparIteration(const OtuTable *_otu_table, unsigned int _exclusion_iterations, float _exclusion_threshold) {
     otu_table = _otu_table;
     exclusion_iterations = _exclusion_iterations;
     exclusion_threshold = _exclusion_threshold;

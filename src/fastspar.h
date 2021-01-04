@@ -16,7 +16,7 @@ struct FastSpar {
     // Some algorithm parameters
     unsigned int iterations;
     unsigned int exclusion_iterations;
-    unsigned int exclusion_threshold;
+    float exclusion_threshold;
 
     // RNG
     int seed;
@@ -43,7 +43,7 @@ struct FastSpar {
 
 
     // Construct FastSpar with a given otu_table and other parameters
-    FastSpar(const OtuTable *_otu_table, unsigned int _iterations, unsigned int _exclusion_iterations, unsigned int _exclusion_threshold, unsigned int _threads, unsigned int _seed);
+    FastSpar(const OtuTable *_otu_table, unsigned int _iterations, unsigned int _exclusion_iterations, float _exclusion_threshold, unsigned int _threads, unsigned int _seed);
 
     // Infer correlation and covariance for n iterations
     void infer_correlation_and_covariance();
@@ -57,7 +57,7 @@ struct FastSparIteration {
     // Some variables
     const OtuTable *otu_table;
     unsigned int exclusion_iterations;
-    unsigned int exclusion_threshold;
+    float exclusion_threshold;
 
     // Estimated fractions of OTUs
     arma::Mat<float> fraction_estimates;
@@ -79,7 +79,7 @@ struct FastSparIteration {
 
 
     // Construct FastSparIterations with a given otu_table and other parameters
-    FastSparIteration(const OtuTable *_otu_table, unsigned int _exclusion_iterations, unsigned int _exclusion_threshold);
+    FastSparIteration(const OtuTable *_otu_table, unsigned int _exclusion_iterations, float _exclusion_threshold);
 
     // Estimates component fraction of all OTUs across samples using a dirichlet distribution
     void estimate_component_fractions(gsl_rng *p_rng);
