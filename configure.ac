@@ -1,5 +1,5 @@
 # Initialisation
-AC_INIT([fastspar], [0.0.10], [s.watts2@student.unimelb.edu.au])
+AC_INIT([fastspar], [1.0.0], [s.watts2@student.unimelb.edu.au])
 AM_INIT_AUTOMAKE([foreign -Wall -Werror])
 AC_LANG([C++])
 
