@@ -19,8 +19,6 @@ Rapid and scalable correlation estimation for compositional data
 ## Introduction
 `FastSpar` is a C++ implementation of the [SparCC algorithm](http://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1002687) which is up to several thousand times faster than the original Python2 release and uses much less memory. The `FastSpar` implementation provides threading support and a *p*-value estimator which accounts for the possibility of repetitious data permutations (see [this](https://arxiv.org/pdf/1603.05766.pdf) paper for further details).
 
-An important step of correlation analysis is removal of noise and dimension reduction. A common method to perform this is distribution-based clustering of OTUs. The aim is to reunite OTUs derived from sequencing error with the parent OTU by clustering raw OTUs based on nucleotide edit distance and count distribution. `FastSpar` is paired with an [efficient implementation](https://github.com/scwatts/otudistclust) of the popular distribution-based clustering method dbOTU3.
-
 
 ## Citation
 If you use this tool, please cite the `FastSpar` paper and original SparCC paper:
@@ -133,7 +131,7 @@ fastspar --otu_table tests/data/fake_data.txt --correlation median_correlation.t
 * **[sritchie73](https://github.com/sritchie73)**
   * Advised on use of permutation based statistical testing
   * Provided an example use of `statmod::permp`
-* **[@epruesse](https://github.com/epruesse)**
+* **[epruesse](https://github.com/epruesse)**
   * Created bioconda recipe
 
 
