@@ -1,6 +1,7 @@
 # FastSpar
 [![Build Status](https://travis-ci.org/scwatts/fastspar.svg?branch=master)](https://travis-ci.org/scwatts/fastspar)
 [![License](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0.en.html)
+[![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat)](http://bioconda.github.io/recipes/fastspar/README.html)
 
 Rapid and scalable correlation estimation for compositional data
 
