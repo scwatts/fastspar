@@ -94,6 +94,11 @@ int main(int argc, char **argv) {
     OtuTable otu_table;
     otu_table.load_otu_file(bootstrap_options.otu_filename);
 
+    // If bootstrap_prefix contains a directory, check that it exists
+    if (bootstrap_options.bootstrap_prefix.find('/') != std::string::npos) {
+	directory_exists(bootstrap_options.bootstrap_prefix);
+    }
+
     // Generate bootstraps
     get_and_write_bootstraps(otu_table, bootstrap_options.bootstrap_number, bootstrap_options.bootstrap_prefix, bootstrap_options.threads, bootstrap_options.seed);
 

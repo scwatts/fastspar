@@ -1,5 +1,6 @@
 #include "common.h"
 
+#include <dirent.h>
 
 std::vector<std::string> PERMITTED_OTU_HEADERS = {"#OTU ID", "#OTU_ID", "OTU ID", "OTU_ID", "OTU_id", "OTU id"};
 
@@ -161,4 +162,16 @@ float float_from_optarg(const char *optarg) {
         }
     }
     return std::atof(string_float.c_str());
+}
+
+void directory_exists(const std::string &optarg) {
+    std::string outfile_dir(optarg);
+    outfile_dir.erase(outfile_dir.rfind("/"), outfile_dir.size());
+    DIR* dir = opendir(outfile_dir.c_str());
+    if (dir) {
+	closedir(dir);
+    } else {
+	fprintf(stderr, "Directory does not seem to exist: %s/\n", outfile_dir.c_str());
+	exit(1);
+    }
 }
