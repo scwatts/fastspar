@@ -1,5 +1,8 @@
 #include "common.h"
 
+#ifndef _WIN32 // dirent.h is not available on windows
+#include <dirent.h>
+#endif
 
 std::vector<std::string> PERMITTED_OTU_HEADERS = {"#OTU ID", "#OTU_ID", "OTU ID", "OTU_ID", "OTU_id", "OTU id"};
 
@@ -161,4 +164,18 @@ float float_from_optarg(const char *optarg) {
         }
     }
     return std::atof(string_float.c_str());
+}
+
+void directory_exists(const std::string &optarg) {
+#ifndef _WIN32 // implementation doesn't work on windows
+    std::string outfile_dir(optarg);
+    outfile_dir.erase(outfile_dir.rfind("/"), outfile_dir.size());
+    DIR* dir = opendir(outfile_dir.c_str());
+    if (dir) {
+	closedir(dir);
+    } else {
+	fprintf(stderr, "Directory does not seem to exist: %s/\n", outfile_dir.c_str());
+	exit(1);
+    }
+#endif
 }

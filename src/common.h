@@ -49,5 +49,6 @@ int int_from_optarg(const char *optarg);
 // Convert character to float (for commandline argument parsing)
 float float_from_optarg(const char *optarg);
 
+void directory_exists(const std::string &optarg);
 
 #endif
