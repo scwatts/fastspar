@@ -237,6 +237,11 @@ int main(int argc, char **argv) {
 	    exit(0);
     }
 
+    // Check that the output files are accessible if not in current directory
+    if (pval_options.out_filename.find('/') != std::string::npos) {
+	directory_exists(pval_options.out_filename);
+    }
+
     // Read in otu tables (used to calculate total possible permutations)
     printf("Reading in OTU count table\n");
     OtuTable otu_table;
