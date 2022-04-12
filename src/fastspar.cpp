@@ -47,6 +47,14 @@ int main(int argc, char **argv) {
     FastSpar fastspar(&otu_table, fastspar_options.iterations, fastspar_options.exclude_iterations,
                       fastspar_options.threshold, fastspar_options.threads, fastspar_options.seed);
 
+    // Check that the output files are accessible if not in current directory
+    if (fastspar_options.correlation_filename.find('/') != std::string::npos) {
+	directory_exists(fastspar_options.correlation_filename);
+    }
+    if (fastspar_options.covariance_filename.find('/') != std::string::npos) {
+	directory_exists(fastspar_options.covariance_filename);
+    }
+
     // Run FastSpar iterations
     fprintf(stdout, "Running SparCC iterations\n");
     fastspar.infer_correlation_and_covariance();
