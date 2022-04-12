@@ -229,6 +229,11 @@ int main(int argc, char **argv) {
     // Get commandline arguments
     PvalOptions pval_options = get_commandline_arguments(argc, argv);
 
+    // Check that the input prefix is accessible if in a folder
+    if (pval_options.bootstrap_prefix.find('/') != std::string::npos) {
+	directory_exists(pval_options.bootstrap_prefix);
+    }
+
     // Collect bootstrap correlation file paths and then make sure we have found the correct number
     std::vector<std::string> bs_cor_paths = get_bootstrap_correlation_paths(pval_options.bootstrap_prefix);
     if (bs_cor_paths.size() != pval_options.permutations) {
